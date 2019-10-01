@@ -1,0 +1,44 @@
+{
+  "name": "pixi-renderbuffer",
+  "version": "0.1.0",
+  "description": "PixiJS v5 plugin, adds advanced buffer for antialiasing and caching",
+  "author": "Ivan Popelyshev",
+  "contributors": [
+    "Ivan Popelyshev <ivan.popelyshev@gmail.com>"
+  ],
+  "main": "./dist/pixi-renderbuffer.js",
+  "types": "./dist/pixi-renderbuffer.d.ts",
+  "homepage": "http://www.pixijs.com/",
+  "bugs": "https://github.com/pixijs/pixi-renderbuffer/issues",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pixijs/pixi-renderbuffer.git"
+  },
+  "scripts": {
+    "cleanup": "rimraf dist && mkdirp dist",
+    "prestart": "yarn cleanup",
+    "start": "parallelshell \"yarn watch\"",
+    "watch": "tsc -w",
+    "prebuild": "yarn cleanup",
+    "make:dts": "node scripts/make_dts.js",
+    "build": "tsc && yarn make:dts"
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "CONTRIBUTING.md",
+    "LICENSE",
+    "package.json",
+    "tsconfig.json",
+    "README.md"
+  ],
+  "devDependencies": {
+    "del": "^2.2.0",
+    "mkdirp": "^0.5.1",
+    "parallelshell": "^2.0.0",
+    "rimraf": "^2.5.3",
+    "typescript": "^3.6.3",
+    "pixi.js": "^5.1.5"
+  }
+}
