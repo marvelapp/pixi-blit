@@ -61,9 +61,16 @@ namespace pixi_blit {
             return this.renderTexture.resolution; // getter for baseTexture.resolution
         }
 
-        render(container: PIXI.Container, dontClear = false,
+        /**
+         * method analog to PIXI.Renderer#render : it renders stuff in buffer, then blits it to renderTexture if available
+         */
+        render(container: PIXI.Container, renderTexture: PIXI.RenderTexture, dontClear = false,
                translation: PIXI.Matrix, skipUpdateTransform = false) {
+            //TODO: dont track AA groups in this case. set renderer _activeBlitBuffer
             this.parentRenderer.render(container, this.renderTexture, dontClear, translation, skipUpdateTransform);
+            if (renderTexture) {
+                this.blit(renderTexture);
+            }
         }
 
         /**
