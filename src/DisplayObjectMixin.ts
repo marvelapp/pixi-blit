@@ -3,14 +3,14 @@ declare namespace PIXI {
 	    /**
 	     * Whether element should be processed by AA
 	     */
-        antialias: boolean;
+        aaMode: number;
         _blitCacheData: PIXI.Sprite;
     }
 }
 
 namespace pixi_blit {
 	(Object as any).assign(PIXI.DisplayObject.prototype, {
-		antialias: false,
+        aaMode: 0,
         _blitCacheData: null,
 	});
 }
