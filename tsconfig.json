@@ -5,7 +5,7 @@
         "noImplicitAny": true,
         "removeComments": true,
         "preserveConstEnums": true,
-        "outFile": "dist/pixi-renderbuffer.js",
+        "outFile": "dist/pixi-blit.js",
         "sourceMap": true,
         "inlineSources": true,
         "declaration": true

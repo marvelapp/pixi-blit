@@ -8,7 +8,7 @@ declare namespace PIXI {
     }
 }
 
-namespace pixi_renderbuffer {
+namespace pixi_blit {
 	(Object as any).assign(PIXI.DisplayObject.prototype, {
 		antialias: false,
 		_cachedSprite: null,

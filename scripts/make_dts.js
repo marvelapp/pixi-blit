@@ -25,9 +25,9 @@ tmp.file(function (err, filename) {
     var dtsContent = '' + fs.readFileSync(dtsPath);
 
     fs.writeFileSync(
-      path.resolve('dist/pixi-layers.d.ts'),
-      dtsContent.replace(/namespace pixi_renderbuffer/g, 'namespace PIXI.renderbuffer')
-		  .replace(/pixi_renderbuffer/g, 'PIXI.renderbuffer')
+      path.resolve('dist/pixi-pixi_blit.d.ts'),
+      dtsContent.replace(/namespace pixi_blit/g, 'namespace PIXI.blit')
+		  .replace(/pixi_blit/g, 'PIXI.blit')
     );
   });
 }, {postfix: '.ts'});

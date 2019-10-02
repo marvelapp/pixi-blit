@@ -4,7 +4,7 @@ declare namespace PIXI {
     // }
 }
 
-namespace pixi_renderbuffer {
+namespace pixi_blit {
     (Object as any).assign(PIXI.Container.prototype, {
         render: function (renderer: PIXI.Renderer): void {
             if (this._activeParentLayer && this._activeParentLayer != renderer._activeLayer) {

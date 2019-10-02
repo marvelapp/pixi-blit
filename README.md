@@ -1,4 +1,4 @@
-# pixi-renderbuffer
+# pixi-blit
 PixiJS v5 advanced buffer for caching and antialiasing.
 
 ### WebGL1
@@ -16,5 +16,5 @@ Make sure that you dont have two copies of pixiJS: one from html, one from brows
 ```
 import * as PIXI from "pixi.js';
 window.PIXI = PIXI;
-import "pixi-renderbuffer"; //or require("pixi-renderbuffer")
+import "pixi-blit"; //or require("pixi-blit")
 ```

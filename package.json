@@ -1,19 +1,19 @@
 {
-  "name": "pixi-renderbuffer",
+  "name": "pixi-blit",
   "version": "0.1.0",
   "description": "PixiJS v5 plugin, adds advanced buffer for antialiasing and caching",
   "author": "Ivan Popelyshev",
   "contributors": [
     "Ivan Popelyshev <ivan.popelyshev@gmail.com>"
   ],
-  "main": "./dist/pixi-renderbuffer.js",
-  "types": "./dist/pixi-renderbuffer.d.ts",
+  "main": "./dist/pixi-blit.js",
+  "types": "./dist/pixi-blit.d.ts",
   "homepage": "http://www.pixijs.com/",
-  "bugs": "https://github.com/pixijs/pixi-renderbuffer/issues",
+  "bugs": "https://github.com/pixijs/pixi-blit/issues",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/pixijs/pixi-renderbuffer.git"
+    "url": "https://github.com/pixijs/pixi-blit.git"
   },
   "scripts": {
     "cleanup": "rimraf dist && mkdirp dist",
