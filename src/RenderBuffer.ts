@@ -52,13 +52,14 @@ namespace pixi_blit {
                 scaleMode: PIXI.SCALE_MODES.LINEAR
             };
 
+            this._blitFilter = new PIXI.filters.AlphaFilter();
+            this._blitFilter.blendMode = PIXI.BLEND_MODES.NONE;
+            this._storageMode = BLIT_STORAGE_MODE.WEBGL_CONTEXT;
             this._init(options);
         }
 
         _init(options: IRenderBufferOptions) {
             this.innerTexture = PIXI.RenderTexture.create(this._dimensions);
-            this._blitFilter = new PIXI.filters.AlphaFilter();
-            this._blitFilter.blendMode = PIXI.BLEND_MODES.NONE;
         }
 
         _dimensions: ITextureOptions;
@@ -95,14 +96,14 @@ namespace pixi_blit {
         }
 
         get resolution() {
-            return this._dimensions.resolution; // getter for baseTexture.resolution
+            return this._dimensions.resolution;
         }
 
         /**
          * method analog to PIXI.Renderer#render : it renders stuff in buffer, then blits it to renderTexture if available
          */
         renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, dontClear = false,
-               translation: PIXI.Matrix, skipUpdateTransform = false) {
+                      translation: PIXI.Matrix, skipUpdateTransform = false) {
             //TODO: dont track AA groups in this case. set renderer _activeBlitBuffer
             this.parentRenderer.render(container, this.innerTexture, dontClear, translation, skipUpdateTransform);
             if (renderTexture) {
@@ -112,11 +113,16 @@ namespace pixi_blit {
 
         _blitFilter: PIXI.Filter = null;
         _blitRequest = new BlitRequest();
+
         /**
          * Texture copy, doesnt support offset due to webgl1 backend.
          * @param destination target renderTexture
          */
         blit(destination: PIXI.RenderTexture) {
+            if (this.parentRenderer.context.isLost) {
+                return;
+            }
+
             const dimensions = this._dimensions;
 
             const req = this._blitRequest;
@@ -137,9 +143,9 @@ namespace pixi_blit {
         _blitInnerTexture(req: BlitRequest) {
             //this.innerTexture is copied or drawn on req.output, depends on resolution
             const renderer = this.parentRenderer;
-            const { gl } = renderer;
+            const {gl} = renderer;
             const input = this.innerTexture;
-            const { output, rect, matchRes, doClear } = req;
+            const {output, rect, matchRes, doClear} = req;
 
             if (matchRes) {
                 if (doClear) {
@@ -159,12 +165,34 @@ namespace pixi_blit {
         static create(renderer: PIXI.Renderer, options: IRenderBufferOptions) {
             let storageMode = options.storageMode || BLIT_STORAGE_MODE.AUTO_DETECT;
             if (storageMode === BLIT_STORAGE_MODE.AUTO_DETECT) {
-                storageMode = BLIT_STORAGE_MODE.WEBGL_CONTEXT;
+                if (renderer.context.webGLVersion === 2) {
+                    storageMode = BLIT_STORAGE_MODE.MSAA;
+                } else {
+                    storageMode = BLIT_STORAGE_MODE.WEBGL_CONTEXT;
+                }
             }
-            if (storageMode === BLIT_STORAGE_MODE.WEBGL_CONTEXT) {
-                return new RenderBufferGL1(renderer, options);
-            } else {
-                return new RenderBuffer(renderer, options);
+            switch (storageMode) {
+                case BLIT_STORAGE_MODE.WEBGL_CONTEXT:
+                    return new RenderBufferGL1(renderer, options);
+                case BLIT_STORAGE_MODE.MSAA:
+                    return new RenderBufferGL2(renderer, options);
+                default:
+                    return new RenderBuffer(renderer, options);
+            }
+        }
+
+        dispose() {
+            if (this.innerTexture) {
+                this.innerTexture.baseTexture.dispose();
+            }
+        }
+
+        destroy() {
+            this.dispose();
+            this.innerTexture = null;
+            if (this.innerRenderer) {
+                this.innerRenderer.destroy();
+                this.innerRenderer = null;
             }
         }
     }

@@ -13,7 +13,7 @@ rect.drawRect(0, 0, 300, 300);
 
 const textures = [];
 
-const storageMode = PIXI.blit.BLIT_STORAGE_MODE.WEBGL_CONTEXT;
+const storageMode = PIXI.blit.BLIT_STORAGE_MODE.AUTO_DETECT; //WEBGL_CONTEXT, MSAA or RENDER_TEXTURE
 
 let buffers = [
     PIXI.blit.RenderBuffer.create(app.renderer, { width: 200, height: 200, storageMode }),

@@ -5,14 +5,14 @@ namespace pixi_blit {
                 antialias: true,
                 ...this._dimensions
             });
-
-            this._blitFilter = new PIXI.filters.AlphaFilter();
-            this._blitFilter.blendMode = PIXI.BLEND_MODES.NONE;
-            this._storageMode = BLIT_STORAGE_MODE.WEBGL_CONTEXT;
         }
 
         renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, dontClear = false,
                       translation: PIXI.Matrix, skipUpdateTransform = false) {
+            if (this.innerRenderer.context.isLost) {
+                return;
+            }
+
             this.innerRenderer.render(container, undefined, dontClear, translation, skipUpdateTransform);
             if (renderTexture) {
                 this.blit(renderTexture);
@@ -20,6 +20,9 @@ namespace pixi_blit {
         }
 
         _blitInner(req: BlitRequest) {
+            if (this.innerRenderer.context.isLost) {
+                return;
+            }
             const renderer = this.parentRenderer;
             const {gl} = renderer;
             const sourceCanvas = this.innerRenderer.view;
@@ -39,6 +42,7 @@ namespace pixi_blit {
                 if (!this.innerTexture) {
                     this.innerTexture = PIXI.RenderTexture.create(this._dimensions);
                 }
+                // should we use doClear here too?
                 renderer.texture.bindForceLocation(this.innerTexture, 0);
             }
 
