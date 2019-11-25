@@ -45,7 +45,7 @@ namespace pixi_blit {
         constructor(renderer: PIXI.Renderer, options: IRenderBufferOptions) {
             this.parentRenderer = renderer;
 
-            this._textureOptions = {
+            this._dimensions = {
                 width: options.width,
                 height: options.height,
                 resolution: options.resolution || 1,
@@ -56,12 +56,12 @@ namespace pixi_blit {
         }
 
         _init(options: IRenderBufferOptions) {
-            this.innerTexture = PIXI.RenderTexture.create(this._textureOptions);
+            this.innerTexture = PIXI.RenderTexture.create(this._dimensions);
             this._blitFilter = new PIXI.filters.AlphaFilter();
             this._blitFilter.blendMode = PIXI.BLEND_MODES.NONE;
         }
 
-        _textureOptions: ITextureOptions;
+        _dimensions: ITextureOptions;
 
         /**
          * parent renderer
@@ -82,16 +82,20 @@ namespace pixi_blit {
             return this._storageMode;
         }
 
+        get dimensions() {
+            return this._dimensions;
+        }
+
         get width() {
-            return this.innerTexture.width;
+            return this._dimensions.width;
         }
 
         get height() {
-            return this.innerTexture.height;
+            return this._dimensions.height;
         }
 
         get resolution() {
-            return this.innerTexture.resolution; // getter for baseTexture.resolution
+            return this._dimensions.resolution; // getter for baseTexture.resolution
         }
 
         /**
@@ -113,7 +117,7 @@ namespace pixi_blit {
          * @param destination target renderTexture
          */
         blit(destination: PIXI.RenderTexture) {
-            const dimensions = this._textureOptions;
+            const dimensions = this._dimensions;
 
             const req = this._blitRequest;
             req.rect.width = Math.min(dimensions.width, destination.width);

@@ -3,7 +3,7 @@ namespace pixi_blit {
         _init(options: IRenderBufferOptions) {
             this.innerRenderer = new PIXI.Renderer({
                 antialias: true,
-                ...this._textureOptions
+                ...this._dimensions
             });
 
             this._blitFilter = new PIXI.filters.AlphaFilter();
@@ -25,7 +25,7 @@ namespace pixi_blit {
             const sourceCanvas = this.innerRenderer.view;
 
             const {output, rect, matchRes, doClear} = req;
-            const dimensions = this._textureOptions;
+            const dimensions = this._dimensions;
             const ignoreInnerTexture = matchRes && rect.width == dimensions.width
                 && rect.height == dimensions.height;
 
@@ -37,7 +37,7 @@ namespace pixi_blit {
                 renderer.texture.bindForceLocation(output, 0);
             } else {
                 if (!this.innerTexture) {
-                    this.innerTexture = PIXI.RenderTexture.create(this._textureOptions);
+                    this.innerTexture = PIXI.RenderTexture.create(this._dimensions);
                 }
                 renderer.texture.bindForceLocation(this.innerTexture, 0);
             }
