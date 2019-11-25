@@ -1,5 +1,5 @@
 namespace pixi_blit {
-    export class BlitCacheData {
+    export class BlitComponent {
         constructor() {
 
         }

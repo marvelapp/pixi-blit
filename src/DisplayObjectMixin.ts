@@ -4,13 +4,13 @@ declare namespace PIXI {
 	     * Whether element should be processed by AA
 	     */
         aaMode: number;
-        _blitCacheData: PIXI.Sprite;
+        blitComponent: pixi_blit.BlitComponent;
     }
 }
 
 namespace pixi_blit {
 	(Object as any).assign(PIXI.DisplayObject.prototype, {
         aaMode: 0,
-        _blitCacheData: null,
+        blitComponent: null,
 	});
 }
