@@ -13,9 +13,11 @@ rect.drawRect(0, 0, 300, 300);
 
 const textures = [];
 
+const storageMode = PIXI.blit.BLIT_STORAGE_MODE.WEBGL_CONTEXT;
+
 let buffers = [
-    new PIXI.blit.RenderBuffer(app.renderer, { width: 200, height: 200 }),
-    new PIXI.blit.RenderBuffer(app.renderer, { width: 200, height: 200, resolution: 2 })
+    PIXI.blit.RenderBuffer.create(app.renderer, { width: 200, height: 200, storageMode }),
+    PIXI.blit.RenderBuffer.create(app.renderer, { width: 200, height: 200, resolution: 2, storageMode })
 ];
 
 for (let i=0;i<6;i++) {
