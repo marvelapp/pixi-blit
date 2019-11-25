@@ -1,33 +1,3 @@
-// function setupMultisample() {
-//     let samples = gl.getInternalformatParameter(
-//         gl.RENDERBUFFER, gl.RGBA8, gl.SAMPLES)[0];
-//
-//     framebufferMulti = gl.createFramebuffer();
-//
-//     gl.bindFramebuffer(gl.FRAMEBUFFER, framebufferMulti);
-//
-//     let color = gl.createRenderbuffer();
-//     gl.bindRenderbuffer(gl.RENDERBUFFER, color);
-//     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, color);
-//     gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA8, appWidth, appHeight);
-//
-//     let stencil = gl.createRenderbuffer();
-//     gl.bindRenderbuffer(gl.RENDERBUFFER, stencil);
-//     //vvvv Switch those two lines!
-//     // gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.STENCIL_ATTACHMENT, gl.RENDERBUFFER, stencil);
-//     // gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.STENCIL_INDEX8, appWidth, appHeight);
-//     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, stencil);
-//     gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH24_STENCIL8, appWidth, appHeight);
-// }
-//
-// function blitMulti() {
-//     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, framebufferMulti);
-//     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, framebuffer);
-//     gl.blitFramebuffer(0, 0, appWidth, appHeight,
-//         0, 0, appWidth, appHeight,
-//         gl.COLOR_BUFFER_BIT, gl.NEAREST);
-// }
-
 namespace pixi_blit {
     export class RenderBufferGL2 extends RenderBuffer {
         _init(options: IRenderBufferOptions) {
