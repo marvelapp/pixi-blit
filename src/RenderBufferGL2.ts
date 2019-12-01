@@ -13,9 +13,9 @@ namespace pixi_blit {
         _framebuffer: PIXI.Framebuffer;
         useBlitForScale = true;
 
-        renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, dontClear = false,
-                      translation: PIXI.Matrix, skipUpdateTransform = false) {
-            this.parentRenderer.render(container, this.msTexture, dontClear, translation, skipUpdateTransform);
+        renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, clear = false,
+                      translation?: PIXI.Matrix, skipUpdateTransform = false) {
+            this.parentRenderer.render(container, this.msTexture, clear, translation, skipUpdateTransform);
             if (renderTexture) {
                 this.blit(renderTexture);
             }

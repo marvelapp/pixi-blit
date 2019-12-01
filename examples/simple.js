@@ -1,4 +1,4 @@
-const app = new PIXI.Application({ antialias: false });
+const app = new PIXI.Application({antialias: false});
 document.body.appendChild(app.view);
 
 const circle = new PIXI.Graphics();
@@ -16,25 +16,25 @@ const textures = [];
 const storageMode = PIXI.blit.BLIT_STORAGE_MODE.AUTO_DETECT; //WEBGL_CONTEXT, MSAA or RENDER_TEXTURE
 
 let buffers = [
-    PIXI.blit.RenderBuffer.create(app.renderer, { width: 200, height: 200, storageMode }),
-    PIXI.blit.RenderBuffer.create(app.renderer, { width: 200, height: 200, resolution: 2, storageMode })
+    PIXI.blit.RenderBuffer.create(app.renderer, {width: 200, height: 200, storageMode}),
+    PIXI.blit.RenderBuffer.create(app.renderer, {width: 200, height: 200, resolution: 2, storageMode})
 ];
 
-for (let i=0;i<6;i++) {
+for (let i = 0; i < 6; i++) {
     let row = i % 2;
     let col = i >> 1;
     let buf = buffers[row];
     buf.clearBeforeBlit = 0;
 
     let size = 250;
-    if (col===1) {
+    if (col === 1) {
         size = 200;
     }
-    if (col===2) {
+    if (col === 2) {
         size = 150;
     }
 
-    let rt = PIXI.RenderTexture.create({ width: size, height: size});
+    let rt = PIXI.RenderTexture.create({width: size, height: size});
     // to check the overflow case
     app.renderer.render(rect, rt);
 

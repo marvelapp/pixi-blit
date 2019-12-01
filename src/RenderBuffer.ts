@@ -102,10 +102,10 @@ namespace pixi_blit {
         /**
          * method analog to PIXI.Renderer#render : it renders stuff in buffer, then blits it to renderTexture if available
          */
-        renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, dontClear = false,
-                      translation: PIXI.Matrix, skipUpdateTransform = false) {
+        renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, clear = false,
+                      translation?: PIXI.Matrix, skipUpdateTransform = false) {
             //TODO: dont track AA groups in this case. set renderer _activeBlitBuffer
-            this.parentRenderer.render(container, this.innerTexture, dontClear, translation, skipUpdateTransform);
+            this.parentRenderer.render(container, this.innerTexture, clear, translation, skipUpdateTransform);
             if (renderTexture) {
                 this.blit(renderTexture);
             }

@@ -7,13 +7,13 @@ namespace pixi_blit {
             });
         }
 
-        renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, dontClear = false,
-                      translation: PIXI.Matrix, skipUpdateTransform = false) {
+        renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, clear = false,
+                      translation?: PIXI.Matrix, skipUpdateTransform = false) {
             if (this.innerRenderer.context.isLost) {
                 return;
             }
 
-            this.innerRenderer.render(container, undefined, dontClear, translation, skipUpdateTransform);
+            this.innerRenderer.render(container, undefined, clear, translation, skipUpdateTransform);
             if (renderTexture) {
                 this.blit(renderTexture);
             }
