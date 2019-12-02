@@ -49,7 +49,8 @@ namespace pixi_blit {
                 width: options.width,
                 height: options.height,
                 resolution: options.resolution || 1,
-                scaleMode: PIXI.SCALE_MODES.LINEAR
+                scaleMode: PIXI.SCALE_MODES.LINEAR,
+                transparent: true,
             };
 
             this._blitFilter = new PIXI.filters.AlphaFilter();
@@ -154,6 +155,7 @@ namespace pixi_blit {
                 }
                 renderer.renderTexture.bind(input);
                 renderer.texture.bindForceLocation(output, 0);
+                gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
                 renderer.gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0,
                     rect.width, rect.height);
             } else {
