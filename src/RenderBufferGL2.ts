@@ -1,21 +1,21 @@
 namespace pixi_blit {
+    const inRect = new PIXI.Rectangle(0, 0, 1, 1);
+    const outRect = new PIXI.Rectangle(0, 0, 1, 1);
+
     export class RenderBufferGL2 extends RenderBuffer {
         _init(options: IRenderBufferOptions) {
-            this.msTexture = PIXI.RenderTexture.create(this._dimensions);
-            const gl = this.parentRenderer.gl as any;
+            this.innerTexture = PIXI.RenderTexture.create(this._dimensions);
             this._storageMode = BLIT_STORAGE_MODE.MSAA;
-            this._framebuffer = (this.msTexture.baseTexture as any).framebuffer;
-            this._framebuffer.samples = gl.getInternalformatParameter(
-                gl.RENDERBUFFER, gl.RGBA8, gl.SAMPLES)[0];
+            this._framebuffer = (this.innerTexture.baseTexture as any).framebuffer;
+            this._framebuffer.multisample = PIXI.MSAA_QUALITY.HIGH;
         }
 
-        msTexture: PIXI.RenderTexture;
         _framebuffer: PIXI.Framebuffer;
         useBlitForScale = true;
 
         renderAndBlit(container: PIXI.Container, renderTexture: PIXI.RenderTexture, clear = false,
                       translation?: PIXI.Matrix, skipUpdateTransform = false) {
-            this.parentRenderer.render(container, this.msTexture, clear, translation, skipUpdateTransform);
+            this.parentRenderer.render(container, this.innerTexture, clear, translation, skipUpdateTransform);
             if (renderTexture) {
                 this.blit(renderTexture);
             }
@@ -24,53 +24,34 @@ namespace pixi_blit {
         _blitInner(req: BlitRequest) {
             const renderer = this.parentRenderer;
             const gl = renderer.gl as any;
-
             const {rect, matchRes, doClear} = req;
-
-            if (!matchRes) {
-                if (!this.innerTexture) {
-                    this.innerTexture = PIXI.RenderTexture.create(this._dimensions);
-                }
-                renderer.renderTexture.bind(this.innerTexture);
-                // should we use doClear here too?
-            } else {
-                renderer.renderTexture.bind(req.output);
-                if (doClear) {
-                    renderer.renderTexture.clear();
-                }
-            }
-            let readFramebuffer = this._framebuffer.glFramebuffers[(renderer as any).CONTEXT_UID].framebuffer;
-            const drawFramebuffer = (renderer.framebuffer as any).current.glFramebuffers[(renderer as any).CONTEXT_UID].framebuffer;
-            gl.bindFramebuffer(gl.READ_FRAMEBUFFER, readFramebuffer);
-
+            const resizeTo: PIXI.Framebuffer = (req.output.baseTexture as any).framebuffer;
+            const blitTo = matchRes ? resizeTo : null;
             const inputRes = this._dimensions.resolution;
             const outRes = req.output.baseTexture.resolution;
-            const w = Math.round(rect.width * inputRes), h = Math.round(rect.height * inputRes);
 
-            gl.blitFramebuffer(0, 0, w, h,
-                0, 0, w, h,
-                gl.COLOR_BUFFER_BIT, gl.NEAREST
-            );
+            if (doClear) {
+                renderer.renderTexture.bind(req.output);
+                renderer.renderTexture.clear();
+            }
+            renderer.renderTexture.bind(this.innerTexture);
+
+
+            inRect.width = Math.round(rect.width * inputRes);
+            inRect.height = Math.round(rect.height * inputRes);
+
+            renderer.framebuffer.blit(blitTo, inRect, inRect);
             if (!matchRes) {
                 if (this.useBlitForScale) {
-                    renderer.renderTexture.bind(req.output);
-                    const w2 = Math.round(rect.width * outRes), h2 = Math.round(rect.height * outRes);
-                    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, drawFramebuffer);
-                    gl.blitFramebuffer(0, 0, w, h,
-                        0, 0, w2, h2,
-                        gl.COLOR_BUFFER_BIT, gl.LINEAR
-                    );
+                    outRect.width = Math.round(rect.width * outRes);
+                    outRect.height = Math.round(rect.height * outRes);
+                    renderer.framebuffer.blit(resizeTo, inRect, outRect);
                 } else {
                     this._blitInnerTexture(req);
                 }
             }
             renderer.renderTexture.bind(null);
             gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
-        }
-
-        dispose() {
-            super.dispose();
-            this.msTexture.baseTexture.dispose();
         }
     }
 }

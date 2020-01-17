@@ -49,7 +49,7 @@ namespace pixi_blit {
         (this.globalUniforms as any).update();
 
         //applying shader
-        filter.apply(this, input, output, clear, state);
+        filter.apply(this, input, output, clear ? PIXI.CLEAR_MODES.CLEAR : PIXI.CLEAR_MODES.NO, state);
 
         //restore old frame
         (input as any).filterFrame = saveFilterFrame;

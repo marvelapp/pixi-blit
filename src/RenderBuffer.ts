@@ -20,18 +20,14 @@ namespace pixi_blit {
         scaleMode: PIXI.SCALE_MODES;
     }
 
-    export enum CLEAR_MODES {
-        OFF = 0,
-        AUTO = 1,
-        ON = 2
-    }
-
     export class BlitRequest {
         output: PIXI.RenderTexture = null;
         matchRes = false;
         doClear = false;
         rect = new PIXI.Rectangle();
     }
+
+    import CLEAR_MODES = PIXI.CLEAR_MODES;
 
     /**
      * high-level API that is backed by
@@ -50,7 +46,6 @@ namespace pixi_blit {
                 height: options.height,
                 resolution: options.resolution || 1,
                 scaleMode: PIXI.SCALE_MODES.LINEAR,
-                transparent: true,
             };
 
             this._blitFilter = new PIXI.filters.AlphaFilter();
@@ -130,7 +125,7 @@ namespace pixi_blit {
             req.rect.width = Math.min(dimensions.width, destination.width);
             req.rect.height = Math.min(dimensions.height, destination.height);
             req.matchRes = destination.baseTexture.resolution === dimensions.resolution;
-            req.doClear = this.clearBeforeBlit == CLEAR_MODES.ON || this.clearBeforeBlit == CLEAR_MODES.AUTO &&
+            req.doClear = this.clearBeforeBlit == CLEAR_MODES.CLEAR || this.clearBeforeBlit == CLEAR_MODES.AUTO &&
                 (destination.width > req.rect.width || destination.height > req.rect.height);
             req.output = destination;
 

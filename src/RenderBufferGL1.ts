@@ -3,6 +3,7 @@ namespace pixi_blit {
         _init(options: IRenderBufferOptions) {
             this.innerRenderer = new PIXI.Renderer({
                 antialias: true,
+                transparent: true,
                 ...this._dimensions
             });
         }
