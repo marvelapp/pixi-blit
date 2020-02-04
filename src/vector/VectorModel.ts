@@ -1,5 +1,9 @@
 namespace pixi_blit {
+    export let MIN_CACHE_LEVELS = 5;
+    export let MAX_CACHE_LEVELS = 3;
+
     export class VectorModel {
+
         constructor() {
             this.uniqId = generateUid();
         }
@@ -13,15 +17,22 @@ namespace pixi_blit {
         instances: { [uniqId: number]: RasterCache };
         instanceCache: { [uniqId: number]: RasterCache };
 
+        copyBounds(mat: PIXI.Matrix, out: PIXI.Bounds) {
+            const { minX, minY, maxX, maxY } = this.graphics.geometry.bounds;
+
+            out.clear();
+            out.addFrameMatrix(mat, minX, maxX, minY, maxY);
+        }
+
         geometry: VectorGeometry;
         preferredCache: CacheType;
     }
 
     export class RasterCache implements IGCEntry {
         key: string;
-        model: VectorModel;
-        mat: PIXI.Matrix;
-        transformedBounds: PIXI.Bounds;
+        mat = new PIXI.Matrix();
+        transformedBounds = new PIXI.Bounds();
+        outerBounds: PIXI.Bounds;
         atlasNode: AtlasNode<RasterCache>;
         atlas: AbstractAtlas;
         instance: VectorSprite;
@@ -29,12 +40,16 @@ namespace pixi_blit {
         mem = new MemoryComponent();
         area = 0;
 
+        constructor(public model: VectorModel, mat: PIXI.Matrix) {
+            this.mat.copyFrom(mat);
+        }
+
         get width() {
-            return this.transformedBounds.maxX - this.transformedBounds.minX;
+            return this.outerBounds.maxX - this.outerBounds.minX;
         }
 
         get height() {
-            return this.transformedBounds.maxY - this.transformedBounds.minY;
+            return this.outerBounds.maxY - this.outerBounds.minY;
         }
     }
 }

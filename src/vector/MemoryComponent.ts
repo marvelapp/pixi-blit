@@ -1,8 +1,9 @@
 namespace pixi_blit {
     export enum CacheStatus {
-        Hold = 0,
-        Hanging = 1,
-        Disposed = 2,
+        Init = 0,
+        Drawn = 1,
+        Hanging = 2,
+        Disposed = 3,
     }
 
     let uniqIdCounter = 0;
@@ -27,7 +28,7 @@ namespace pixi_blit {
                 this.touchedGc = gcNum;
             }
         }
-        cacheStatus: CacheStatus;
+        cacheStatus = CacheStatus.Init;
     }
 
     export interface IGCEntry {

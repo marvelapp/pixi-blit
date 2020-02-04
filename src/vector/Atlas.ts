@@ -56,7 +56,7 @@ namespace pixi_blit {
             for (let i=0;i<addedElements.length;i++) {
                 const elem = addedElements[i];
 
-                if (elem.mem.cacheStatus === CacheStatus.Hold) {
+                if (elem.mem.cacheStatus <= CacheStatus.Drawn) {
                     holdArea += elem.area;
                 }
             }
