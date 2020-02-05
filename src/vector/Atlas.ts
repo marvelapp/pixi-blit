@@ -68,4 +68,20 @@ namespace pixi_blit {
 
         abstract render(): void;
     }
+
+    export class AbstractAtlasCollection {
+        constructor(public readonly type: CacheType, public defaultOptions: PIXI.ISize) {
+        }
+
+        frameRasterQueue: Array<RasterCache> = [];
+        frameRasterMap: {[key: number]: RasterCache} = {};
+
+        prerender() {
+            // handles dead atlases and adds free elements back to queue.
+
+            // takes frame queue and rasterizes everything
+
+            // elements do not move to other atlases
+        }
+    }
 }

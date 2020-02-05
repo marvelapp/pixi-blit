@@ -9,12 +9,17 @@ namespace pixi_blit {
         models: { [key: number]: VectorModel };
         entries: { [key: number]: IGCEntry };
 
+        frameVectors: PIXI.Graphics;
+
+        atlases: { [key in CacheType]: AbstractAtlas} = [null, null, null, null] as any;
         root: PIXI.Container;
         frameNum: number;
         lastGcFrameNum: number;
         gcNum: number;
 
         maxBoundsForMips = 1024;
+
+        defaultCacheType = CacheType.WebGL;
 
         public frameTick() {
             this.frameNum++;
@@ -30,10 +35,17 @@ namespace pixi_blit {
 
             if (mip) {
                 if (mip.mem.cacheStatus === CacheStatus.Init) {
+                    if (mip.type === CacheType.Auto) {
+                        mip.type = this.defaultCacheType;
+                    }
                     // call for vectorization if WebGL
                     // add to atlas here
                 }
-            } else {
+                elem.cacheType = mip.type;
+            }
+            else {
+                elem.cacheType = CacheType.No_Cache;
+                // check instanced stuff
                 // call for vectorization
             }
         };

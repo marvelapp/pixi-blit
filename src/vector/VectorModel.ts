@@ -39,6 +39,7 @@ namespace pixi_blit {
 
         mem = new MemoryComponent();
         area = 0;
+        type = CacheType.Auto;
 
         constructor(public model: VectorModel, mat: PIXI.Matrix) {
             this.mat.copyFrom(mat);
