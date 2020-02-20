@@ -45,6 +45,11 @@ namespace pixi_blit {
             return this.drawnElements < this.addedElements.length;
         }
 
+        markClean() {
+            this.drawnElements = this.addedElements.length;
+        }
+
+
         protected createAtlasRoot(): AtlasNode<RasterCache> {
             let res = AtlasNode.allocate<RasterCache>();
             res.rect.width = this.options.width;
@@ -131,6 +136,8 @@ namespace pixi_blit {
     export interface IMultiAtlasOptions {
         size: number;
         textureCount: number;
+        webglAntialias?: boolean;
+        canvasAntiConflation?: boolean;
     }
 
     export class AtlasCollection {

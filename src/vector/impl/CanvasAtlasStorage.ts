@@ -1,47 +1,67 @@
 namespace pixi_blit {
-
     export class CanvasAtlasStorage extends AbstractAtlasStorage {
-        canvas: HTMLCanvasElement = null;
+        canvasRt: PIXI.RenderTexture = null;
         baseTex: PIXI.BaseTexture = null;
+        resource: CanvasAtlasResource = null;
         rootContainer = new PIXI.Container();
 
         constructor(public options: PIXI.ISize) {
-            super(CacheType.WebGL, options);
+            super(CacheType.Canvas2d, options);
 
+            this.canvasRt = PIXI.RenderTexture.create(options);
             this.rootContainer.renderCanvas = this.renderCanvas;
+
+            this.resource = new CanvasAtlasResource(this);
+            this.baseTex = new PIXI.BaseTexture(this.resource);
         }
 
         get baseTexture() {
             return this.baseTex;
         }
 
-        renderModified = false;
+        get canvas(): HTMLCanvasElement {
+            return (this.canvasRt as any)._canvasRenderTarget.canvas;
+        }
+
+        get context(): CanvasRenderingContext2D {
+            return (this.canvasRt as any)._canvasRenderTarget.context;
+        }
+
+        renderOnlyModified = true;
 
         /**
          * called from blitterCache
          * @param renderer
          */
         renderCanvas = (renderer: PIXI.CanvasRenderer) => {
-            const {atlas, renderModified} = this;
+            const {atlas, renderOnlyModified, baseTex} = this;
             const {addedElements} = atlas;
             // render only new elements
 
+            baseTex.update();
             for (let i = 0; i < addedElements.length; i++) {
                 const elem = addedElements[i];
                 const {graphicsNode, mem} = elem;
+                // detect mixed conflation content
 
-                if (renderModified && mem.cacheStatus !== CacheStatus.Init) {
+                if (renderOnlyModified && mem.cacheStatus !== CacheStatus.Init) {
                     continue;
                 }
+
+                // move modification id to atlas node?
+                elem.baseTexDirtyId = baseTex.dirtyId;
                 mem.cacheStatus = CacheStatus.Drawn;
-                this.atlas.calcElemPos(elem);
+                atlas.calcElemPos(elem);
+
+                //TODO: clip here!
+
                 graphicsNode.renderCanvas(renderer);
             }
         }
     }
 
     export class CanvasStorage extends AtlasCollectionStorage {
-        constructor(public renderer: PIXI.CanvasRenderer, options: IMultiAtlasOptions) {
+        constructor(public renderer: PIXI.Renderer, options: IMultiAtlasOptions) {
             super(CacheType.WebGL, options);
 
             const textureOptions = {
@@ -51,18 +71,21 @@ namespace pixi_blit {
         }
 
         renderBuffer: RenderBuffer = null;
+        canvasRenderer = new PIXI.CanvasRenderer();
 
         render() {
-            const {renderBuffer} = this;
+            const {canvasRenderer} = this;
             const {list} = this.collection;
             for (let j = 0; j < list.length; j++) {
                 const atlas = list[j];
                 if (!atlas.hasNew()) {
                     continue;
                 }
+                atlas.markClean();
 
                 const storage = atlas.storage as CanvasAtlasStorage;
-                //TODO: blit only modified parts
+                canvasRenderer.render(storage.rootContainer, storage.canvasRt);
+                this.renderer.texture.bind(storage.baseTex, 0);
             }
         }
     }

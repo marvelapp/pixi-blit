@@ -2,6 +2,12 @@ namespace pixi_blit {
     export let MIN_CACHE_LEVELS = 5;
     export let MAX_CACHE_LEVELS = 3;
 
+    export enum CANVAS_CONFLATION_MODE {
+        NO = 0,
+        YES = 1,
+        AUTO = 2,
+    }
+
     export class VectorModel {
 
         constructor() {
@@ -12,13 +18,15 @@ namespace pixi_blit {
 
         graphics = new PIXI.Graphics();
         mem = new MemoryComponent();
+        // works with canvas2d
+        conflationMode = CANVAS_CONFLATION_MODE.AUTO;
 
         mipCache: Array<RasterCache>;
         instances: { [uniqId: number]: RasterCache };
         instanceCache: { [uniqId: number]: RasterCache };
 
         copyBounds(mat: PIXI.Matrix, out: PIXI.Bounds) {
-            const { minX, minY, maxX, maxY } = this.graphics.geometry.bounds;
+            const {minX, minY, maxX, maxY} = this.graphics.geometry.bounds;
 
             out.clear();
             out.addFrameMatrix(mat, minX, maxX, minY, maxY);
@@ -41,8 +49,10 @@ namespace pixi_blit {
         texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
 
         // atlas sets those values
-        atlas: Atlas;
-        atlasNode: AtlasNode<RasterCache>;
+        atlas: Atlas = null;
+        atlasNode: AtlasNode<RasterCache> = null;
+        baseTexDirtyId: number = 0;
+        atlasCanvasAntiConflation = false;
 
         constructor(public model: VectorModel, mat: PIXI.Matrix) {
             this.graphicsNode = new PIXI.Graphics(model.graphics.geometry);

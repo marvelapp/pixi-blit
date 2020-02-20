@@ -14,14 +14,14 @@ namespace pixi_blit {
             return this.rt.baseTexture;
         }
 
-        renderModified = false;
+        renderOnlyModified = false;
 
         /**
          * called from blitterCache
          * @param renderer
          */
         render = (renderer: PIXI.Renderer) => {
-            const {atlas, renderModified} = this;
+            const {atlas, renderOnlyModified} = this;
             const {addedElements} = atlas;
             // render only new elements
 
@@ -29,7 +29,7 @@ namespace pixi_blit {
                 const elem = addedElements[i];
                 const {graphicsNode, mem} = elem;
 
-                if (renderModified && mem.cacheStatus !== CacheStatus.Init) {
+                if (renderOnlyModified && mem.cacheStatus !== CacheStatus.Init) {
                     continue;
                 }
                 mem.cacheStatus = CacheStatus.Drawn;
@@ -61,6 +61,7 @@ namespace pixi_blit {
                 if (!atlas.hasNew()) {
                     continue;
                 }
+                atlas.markClean();
 
                 const storage = atlas.storage as WebGLAtlasStorage;
                 //TODO: blit only modified parts
