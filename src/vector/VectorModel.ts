@@ -25,32 +25,37 @@ namespace pixi_blit {
         }
 
         geometry: VectorGeometry;
-        preferredCache: CacheType;
+        preferredCache = CacheType.Auto;
     }
 
     export class RasterCache implements IGCEntry {
         key: string;
-        mat = new PIXI.Matrix();
-        transformedBounds = new PIXI.Bounds();
-        outerBounds: PIXI.Bounds;
-        atlasNode: AtlasNode<RasterCache>;
-        atlas: AbstractAtlas;
+        outerBounds: PIXI.Rectangle = null;
         instance: VectorSprite;
 
         mem = new MemoryComponent();
         area = 0;
         type = CacheType.Auto;
+        // atlas modifies this
+        graphicsNode: PIXI.Graphics = null;
+        texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
+
+        // atlas sets those values
+        atlas: Atlas;
+        atlasNode: AtlasNode<RasterCache>;
 
         constructor(public model: VectorModel, mat: PIXI.Matrix) {
-            this.mat.copyFrom(mat);
+            this.graphicsNode = new PIXI.Graphics(model.graphics.geometry);
+            this.graphicsNode.transform.setFromMatrix(mat);
+            this.outerBounds = this.graphicsNode.getBounds();
         }
 
         get width() {
-            return this.outerBounds.maxX - this.outerBounds.minX;
+            return this.outerBounds.width;
         }
 
         get height() {
-            return this.outerBounds.maxY - this.outerBounds.minY;
+            return this.outerBounds.height;
         }
     }
 }

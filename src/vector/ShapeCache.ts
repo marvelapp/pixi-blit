@@ -11,7 +11,7 @@ namespace pixi_blit {
 
         frameVectors: PIXI.Graphics;
 
-        atlases: { [key in CacheType]: AbstractAtlas} = [null, null, null, null] as any;
+        atlases: { [key in CacheType]: Atlas} = [null, null, null, null] as any;
         root: PIXI.Container;
         frameNum: number;
         lastGcFrameNum: number;
@@ -91,7 +91,7 @@ namespace pixi_blit {
             mat.tx = mat.ty = 0;
 
             raster = model.mipCache[mipLevel] = new RasterCache(model, mat);
-            model.copyBounds(mat, raster.transformedBounds);
+            // RasterCache sets its transformedBounds in constructor
 
             if (model.mipCache.length <= mipLevel) {
                 model.mipCache.length = mipLevel + 1;

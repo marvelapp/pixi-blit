@@ -1,4 +1,6 @@
 namespace pixi_blit {
+    import BLEND_MODE = PIXI.BLEND_MODES;
+
     export enum CacheType {
         Auto = 0,
         No_Cache = 1,
@@ -7,16 +9,29 @@ namespace pixi_blit {
         RuntimeWebGL = 4,
     }
 
-    export abstract class AbstractAtlas {
+    export abstract class AbstractAtlasStorage {
+        constructor(public readonly type: CacheType, public options: PIXI.ISize) {
+        }
+
+        readonly baseTexture: PIXI.BaseTexture;
+    }
+
+    export class Atlas {
         root = new AtlasNode<RasterCache>();
-        rt: PIXI.RenderTexture = null;
         addedElements: Array<RasterCache> = [];
         pad: number = 1;
         totalArea = 0;
         holdArea = 0;
 
-        constructor(public readonly type: CacheType, public options: PIXI.ISize) {
-            this.rt = PIXI.RenderTexture.create(options);
+        constructor(public readonly storage: AbstractAtlasStorage) {
+        }
+
+        get options() {
+            return this.storage.options;
+        }
+
+        get type() {
+            return this.storage.type;
         }
 
         protected createAtlasRoot(): AtlasNode<RasterCache> {
@@ -66,7 +81,39 @@ namespace pixi_blit {
             return holdArea;
         }
 
-        abstract render(): void;
+        attach() {
+
+        }
+
+        calcElemPos(elem: RasterCache) {
+            const {pad, storage} = this;
+            const {graphicsNode, atlasNode, outerBounds, texture} = elem;
+
+            graphicsNode.transform.position.set(
+                -outerBounds.x + pad + atlasNode.rect.left,
+                -outerBounds.y + pad + atlasNode.rect.top);
+            graphicsNode.transform.updateLocalTransform();
+            graphicsNode.transform.worldTransform.copyFrom(graphicsNode.transform.localTransform);
+
+            if (texture.baseTexture !== storage.baseTexture) {
+                //check that it works without extra actions
+                texture.baseTexture = storage.baseTexture;
+            }
+            texture.frame.x = atlasNode.rect.left + pad;
+            texture.frame.y = atlasNode.rect.top + pad;
+            texture.frame.width = elem.width;
+            texture.frame.height = elem.height;
+            texture.orig = texture.frame;
+            texture.updateUvs();
+        }
+
+        calcPositions() {
+            const { addedElements, pad } = this;
+
+            for (let i = 0; i < addedElements.length; i++) {
+                this.calcElemPos(addedElements[i]);
+            }
+        }
     }
 
     export class AbstractAtlasCollection {
@@ -82,6 +129,29 @@ namespace pixi_blit {
             // takes frame queue and rasterizes everything
 
             // elements do not move to other atlases
+        }
+    }
+
+    export class WebGLAtlasStorage extends AbstractAtlasStorage {
+        // temp webgl graphics instances
+
+        rt: PIXI.RenderTexture = null;
+        constructor(public options: PIXI.ISize) {
+            super(CacheType.WebGL, options);
+            this.rt = PIXI.RenderTexture.create(options);
+        }
+
+        get baseTexture() {
+            return this.rt.baseTexture;
+        }
+
+        render(atlas: Atlas, renderer?: PIXI.Renderer) {
+            const { addedElements } = atlas;
+
+            for (let i = 0; i < addedElements.length; i++) {
+                const { graphicsNode } = addedElements[i];
+                graphicsNode.render(renderer);
+            }
         }
     }
 }
