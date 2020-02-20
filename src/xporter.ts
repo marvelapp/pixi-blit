@@ -1,4 +1,4 @@
-/// <reference types="pixi.js" />
+/// <reference types="pixi.js-legacy" />
 
 namespace pixi_blit {
     (PIXI as any).blit = pixi_blit;

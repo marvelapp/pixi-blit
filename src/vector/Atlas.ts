@@ -14,6 +14,11 @@ namespace pixi_blit {
         }
 
         readonly baseTexture: PIXI.BaseTexture;
+
+        atlas: Atlas = null;
+        bind(atlas: Atlas) {
+            this.atlas = atlas;
+        }
     }
 
     export class Atlas {
@@ -22,8 +27,10 @@ namespace pixi_blit {
         pad: number = 1;
         totalArea = 0;
         holdArea = 0;
+        drawnElements = 0;
 
         constructor(public readonly storage: AbstractAtlasStorage) {
+            storage.bind(this);
         }
 
         get options() {
@@ -32,6 +39,10 @@ namespace pixi_blit {
 
         get type() {
             return this.storage.type;
+        }
+
+        hasNew() {
+            return this.drawnElements < this.addedElements.length;
         }
 
         protected createAtlasRoot(): AtlasNode<RasterCache> {
@@ -62,6 +73,7 @@ namespace pixi_blit {
             this.addedElements.length = 0;
             this.totalArea = 0;
             this.holdArea = 0;
+            this.drawnElements = 0;
         }
 
         calcHoldArea() {
@@ -116,9 +128,17 @@ namespace pixi_blit {
         }
     }
 
-    export class AbstractAtlasCollection {
-        constructor(public readonly type: CacheType, public defaultOptions: PIXI.ISize) {
+    export interface IMultiAtlasOptions {
+        size: number;
+        textureCount: number;
+    }
+
+    export class AtlasCollection {
+        constructor(public readonly storage: AtlasCollectionStorage) {
+            storage.bind(this);
         }
+
+        list: Array<Atlas> = [];
 
         frameRasterQueue: Array<RasterCache> = [];
         frameRasterMap: {[key: number]: RasterCache} = {};
@@ -132,26 +152,13 @@ namespace pixi_blit {
         }
     }
 
-    export class WebGLAtlasStorage extends AbstractAtlasStorage {
-        // temp webgl graphics instances
-
-        rt: PIXI.RenderTexture = null;
-        constructor(public options: PIXI.ISize) {
-            super(CacheType.WebGL, options);
-            this.rt = PIXI.RenderTexture.create(options);
+    export abstract class AtlasCollectionStorage {
+        constructor(public readonly type: CacheType, public options: IMultiAtlasOptions) {
         }
 
-        get baseTexture() {
-            return this.rt.baseTexture;
-        }
-
-        render(atlas: Atlas, renderer?: PIXI.Renderer) {
-            const { addedElements } = atlas;
-
-            for (let i = 0; i < addedElements.length; i++) {
-                const { graphicsNode } = addedElements[i];
-                graphicsNode.render(renderer);
-            }
+        collection: AtlasCollection = null;
+        bind(collection: AtlasCollection) {
+            this.collection = collection;
         }
     }
 }
