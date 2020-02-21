@@ -3,7 +3,25 @@ namespace pixi_blit {
     const tempMat = new PIXI.Matrix();
 
     export class ShapeCache {
-        constructor() {
+        constructor(public renderer: PIXI.Renderer,
+                    public root: PIXI.Container,
+                    public options: IMultiAtlasOptions) {
+            this.init();
+        }
+
+        init() {
+            const { atlases, renderer } = this;
+
+            const options: IMultiAtlasOptions = (Object as any).assign({
+                size: 1024,
+                textureCount: 30,
+                webglAntialias: true,
+                canvasAntiConflation: false,
+            }, this. options);
+
+            atlases[CacheType.Canvas2d] = new AtlasCollection(new CanvasStorage(renderer, options));
+            atlases[CacheType.WebGL] = new AtlasCollection(new BlitterStorage(renderer, options));
+            atlases[CacheType.RuntimeWebGL] = new AtlasCollection(new BlitterStorage(renderer, options));
         }
 
         models: { [key: number]: VectorModel };
@@ -11,8 +29,7 @@ namespace pixi_blit {
 
         frameVectors: PIXI.Graphics;
 
-        atlases: { [key in CacheType]: Atlas} = [null, null, null, null] as any;
-        root: PIXI.Container;
+        atlases: { [key in CacheType]: AtlasCollection} = [null, null, null, null] as any;
         frameNum: number;
         lastGcFrameNum: number;
         gcNum: number;
@@ -26,11 +43,24 @@ namespace pixi_blit {
             this.recFind(this.root, this.visitFrame);
         }
 
+        //TODO: move method to graphics class
+        isEmpty(graphics: PIXI.Graphics) {
+            (graphics as any).finishPoly();
+            return (graphics.geometry as any).graphicsData.length === 0;
+        }
+
         protected visitFrame = (elem: VectorSprite): void => {
             const {model} = elem;
 
+            const { graphics } = model;
+
+            if (this.isEmpty(graphics)) {
+                return;
+            }
+
             model.mem.touchFrame(this.frameNum);
 
+            //TODO: runtime instanced instead of mips
             const mip = this.mipBehaviour(elem);
 
             if (mip) {
@@ -38,6 +68,8 @@ namespace pixi_blit {
                     if (mip.type === CacheType.Auto) {
                         mip.type = this.defaultCacheType;
                     }
+
+
                     // call for vectorization if WebGL
                     // add to atlas here
                 }
@@ -45,6 +77,8 @@ namespace pixi_blit {
             }
             else {
                 elem.cacheType = CacheType.No_Cache;
+
+                //TODO: runtime instanced
                 // check instanced stuff
                 // call for vectorization
             }
@@ -90,12 +124,13 @@ namespace pixi_blit {
             mat.a = mat.d = Math.pow(2, mipLevel);
             mat.tx = mat.ty = 0;
 
-            raster = model.mipCache[mipLevel] = new RasterCache(model, mat);
-            // RasterCache sets its transformedBounds in constructor
 
             if (model.mipCache.length <= mipLevel) {
                 model.mipCache.length = mipLevel + 1;
             }
+            // RasterCache sets its transformedBounds in constructor
+            raster = model.mipCache[mipLevel] = new RasterCache(model, mat);
+            this.entries[raster.uniqId] = raster;
 
             return raster;
         }

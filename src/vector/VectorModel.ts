@@ -44,7 +44,7 @@ namespace pixi_blit {
         mem = new MemoryComponent();
         area = 0;
         type = CacheType.Auto;
-        // atlas modifies this
+        // atlas modifies those objects
         graphicsNode: PIXI.Graphics = null;
         texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
 
@@ -54,7 +54,9 @@ namespace pixi_blit {
         baseTexDirtyId: number = 0;
         atlasCanvasAntiConflation = false;
 
+        uniqId: number;
         constructor(public model: VectorModel, mat: PIXI.Matrix) {
+            this.uniqId = generateUid();
             this.graphicsNode = new PIXI.Graphics(model.graphics.geometry);
             this.graphicsNode.transform.setFromMatrix(mat);
             this.outerBounds = this.graphicsNode.getBounds();
