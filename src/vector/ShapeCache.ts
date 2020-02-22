@@ -1,4 +1,5 @@
 namespace pixi_blit {
+    import Atlas = pixi_blit.Atlas;
     const tempBounds = new PIXI.Bounds();
     const tempMat = new PIXI.Matrix();
 
@@ -19,17 +20,32 @@ namespace pixi_blit {
                 canvasAntiConflation: false,
             }, this. options);
 
-            atlases[CacheType.Canvas2d] = new AtlasCollection(new CanvasStorage(renderer, options));
-            atlases[CacheType.WebGL] = new AtlasCollection(new BlitterStorage(renderer, options));
-            atlases[CacheType.RuntimeWebGL] = new AtlasCollection(new BlitterStorage(renderer, options));
+            this.registerAtlas(CacheType.Canvas2d, new CanvasStorage(renderer, options));
+            this.registerAtlas(CacheType.WebGL, new BlitterStorage(renderer, options));
+            this.registerAtlas(CacheType.RuntimeWebGL, new BlitterStorage(renderer, options));
         }
 
+        registerAtlas(type: CacheType, storage: AtlasCollectionStorage): AtlasCollection {
+            const collection = new AtlasCollection(storage);
+
+            this.atlases[type] = collection;
+            for (let key in this.runners) {
+                (this.runners as any)[key].add(collection);
+            }
+
+            return collection;
+        }
+
+
         models: { [key: number]: VectorModel };
-        entries: { [key: number]: IGCEntry };
 
-        frameVectors: PIXI.Graphics;
+        runners = {
+            gcTick: new PIXI.Runner('gcTick'),
+            processQueue: new PIXI.Runner('prerender'),
+            prerender: new PIXI.Runner('prerender'),
+        };
 
-        atlases: { [key in CacheType]: AtlasCollection} = [null, null, null, null] as any;
+        atlases: { [key in CacheType]: AtlasCollection} = [null, null, null, null, null] as any;
         frameNum: number;
         lastGcFrameNum: number;
         gcNum: number;
@@ -41,6 +57,8 @@ namespace pixi_blit {
         public frameTick() {
             this.frameNum++;
             this.recFind(this.root, this.visitFrame);
+            this.runners.processQueue.emit();
+            this.runners.prerender.emit();
         }
 
         //TODO: move method to graphics class
@@ -69,7 +87,7 @@ namespace pixi_blit {
                         mip.type = this.defaultCacheType;
                     }
 
-
+                    this.atlases[mip.type].addToQueue(mip);
                     // call for vectorization if WebGL
                     // add to atlas here
                 }
@@ -77,7 +95,6 @@ namespace pixi_blit {
             }
             else {
                 elem.cacheType = CacheType.No_Cache;
-
                 //TODO: runtime instanced
                 // check instanced stuff
                 // call for vectorization
@@ -130,7 +147,6 @@ namespace pixi_blit {
             }
             // RasterCache sets its transformedBounds in constructor
             raster = model.mipCache[mipLevel] = new RasterCache(model, mat);
-            this.entries[raster.uniqId] = raster;
 
             return raster;
         }
@@ -155,6 +171,7 @@ namespace pixi_blit {
                 model.mem.touchGc(this.gcNum, this.lastGcFrameNum);
             }
             this.lastGcFrameNum = this.gcNum;
+            this.runners.gcTick.emit();
 
             // 1. Find all the graphics that have to be rendered on stage
             // 2. Mark old mips as aren't needed

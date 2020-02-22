@@ -1,3 +1,4 @@
+///<reference path="../AtlasCollection.ts"/>
 namespace pixi_blit {
     export class CanvasAtlasStorage extends AbstractAtlasStorage {
         canvasRt: PIXI.RenderTexture = null;
@@ -63,11 +64,6 @@ namespace pixi_blit {
     export class CanvasStorage extends AtlasCollectionStorage {
         constructor(public renderer: PIXI.Renderer, options: IMultiAtlasOptions) {
             super(CacheType.WebGL, options);
-
-            const textureOptions = {
-                width: options.size,
-                height: options.size,
-            };
         }
 
         renderBuffer: RenderBuffer = null;
@@ -87,6 +83,14 @@ namespace pixi_blit {
                 canvasRenderer.render(storage.rootContainer, storage.canvasRt);
                 this.renderer.texture.bind(storage.baseTex, 0);
             }
+        }
+
+        createStorageFor(raster: RasterCache) {
+            const atlas = new CanvasAtlasStorage( {
+                width: raster.outerBounds.width,
+                height: raster.outerBounds.height,
+            });
+            return atlas;
         }
     }
 }

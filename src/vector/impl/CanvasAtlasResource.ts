@@ -1,5 +1,4 @@
 namespace pixi_blit {
-
     const updated: Array<RasterCache> = [];
     const bounds = new PIXI.Bounds();
 

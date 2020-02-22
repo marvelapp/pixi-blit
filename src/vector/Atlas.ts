@@ -132,40 +132,4 @@ namespace pixi_blit {
             }
         }
     }
-
-    export interface IMultiAtlasOptions {
-        size: number;
-        textureCount: number;
-        webglAntialias?: boolean;
-        canvasAntiConflation?: boolean;
-    }
-
-    export class AtlasCollection {
-        constructor(public readonly storage: AtlasCollectionStorage) {
-            storage.bind(this);
-        }
-
-        list: Array<Atlas> = [];
-
-        frameRasterQueue: Array<RasterCache> = [];
-        frameRasterMap: {[key: number]: RasterCache} = {};
-
-        prerender() {
-            // handles dead atlases and adds free elements back to queue.
-
-            // takes frame queue and rasterizes everything
-
-            // elements do not move to other atlases
-        }
-    }
-
-    export abstract class AtlasCollectionStorage {
-        constructor(public readonly type: CacheType, public options: IMultiAtlasOptions) {
-        }
-
-        collection: AtlasCollection = null;
-        bind(collection: AtlasCollection) {
-            this.collection = collection;
-        }
-    }
 }

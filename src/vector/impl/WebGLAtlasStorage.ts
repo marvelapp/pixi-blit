@@ -1,5 +1,5 @@
+///<reference path="../AtlasCollection.ts"/>
 namespace pixi_blit {
-
     export class WebGLAtlasStorage extends AbstractAtlasStorage {
         rt: PIXI.RenderTexture = null;
         rootContainer = new PIXI.Container();
@@ -44,8 +44,8 @@ namespace pixi_blit {
             super(CacheType.WebGL, options);
 
             const textureOptions = {
-                width: options.size,
-                height: options.size,
+                width: options.atlasMaxSize,
+                height: options.atlasMaxSize,
             };
 
             this.renderBuffer = RenderBuffer.create(renderer, textureOptions);
@@ -67,6 +67,14 @@ namespace pixi_blit {
                 //TODO: blit only modified parts
                 renderBuffer.renderAndBlit(storage.rootContainer, storage.rt);
             }
+        }
+
+        createStorageFor(raster: RasterCache) {
+            const atlas = new WebGLAtlasStorage( {
+                width: raster.outerBounds.width,
+                height: raster.outerBounds.height,
+            });
+            return atlas;
         }
     }
 }
