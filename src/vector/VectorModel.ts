@@ -54,6 +54,11 @@ namespace pixi_blit {
         baseTexDirtyId: number = 0;
         atlasCanvasAntiConflation = false;
 
+        newAtlas: Atlas = null;
+        newAtlasNode: AtlasNode<RasterCache> = null;
+
+        oldAtlasSprite: PIXI.Sprite = null;
+
         uniqId: number;
         constructor(public model: VectorModel, mat: PIXI.Matrix) {
             this.uniqId = generateUid();

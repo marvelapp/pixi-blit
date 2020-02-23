@@ -1,5 +1,5 @@
 namespace pixi_blit {
-    import BLEND_MODE = PIXI.BLEND_MODES;
+
 
     export enum CacheType {
         Auto = 0,
@@ -16,6 +16,7 @@ namespace pixi_blit {
         readonly baseTexture: PIXI.BaseTexture;
 
         atlas: Atlas = null;
+
         bind(atlas: Atlas) {
             this.atlas = atlas;
         }
@@ -58,12 +59,13 @@ namespace pixi_blit {
         }
 
         insert(elem: RasterCache) {
-            const { pad, root } = this;
-            elem.atlasNode = root.insert(elem.width + 2 * pad, elem.height + 2 * pad, elem);
+            const {pad, root} = this;
+            elem.newAtlasNode = root.insert(elem.width + 2 * pad, elem.height + 2 * pad, elem);
 
             this.totalArea += elem.area;
+            this.holdArea += elem.area;
 
-            if (elem.atlasNode) {
+            if (elem.newAtlasNode) {
                 this.addedElements.push(elem);
                 return true;
             }
@@ -82,10 +84,10 @@ namespace pixi_blit {
         }
 
         calcHoldArea() {
-            const { addedElements } = this;
+            const {addedElements} = this;
             let holdArea = 0;
 
-            for (let i=0;i<addedElements.length;i++) {
+            for (let i = 0; i < addedElements.length; i++) {
                 const elem = addedElements[i];
 
                 if (elem.mem.cacheStatus <= CacheStatus.Drawn) {
@@ -102,9 +104,29 @@ namespace pixi_blit {
 
         }
 
-        calcElemPos(elem: RasterCache) {
+        prepareRender(elem: RasterCache) {
             const {pad, storage} = this;
-            const {graphicsNode, atlasNode, outerBounds, texture} = elem;
+
+            if (elem.newAtlas === null) {
+                if (elem.atlas === this) {
+                    return;
+                } else {
+                    throw new Error("Atlas element init error: element belongs to another atlas");
+                }
+            }
+
+            if (elem.newAtlas !== this) {
+                throw new Error("Atlas element init error: element should be added to another atlas");
+            }
+
+            const prevAtlas = elem.atlas;
+
+            elem.atlas = this;
+            elem.atlasNode = elem.newAtlasNode;
+            elem.newAtlas = null;
+            elem.newAtlasNode = null;
+
+            const {graphicsNode, atlasNode, outerBounds, oldAtlasSprite} = elem;
 
             graphicsNode.transform.position.set(
                 -outerBounds.x + pad + atlasNode.rect.left,
@@ -112,23 +134,16 @@ namespace pixi_blit {
             graphicsNode.transform.updateLocalTransform();
             graphicsNode.transform.worldTransform.copyFrom(graphicsNode.transform.localTransform);
 
-            if (texture.baseTexture !== storage.baseTexture) {
-                //check that it works without extra actions
-                texture.baseTexture = storage.baseTexture;
-            }
-            texture.frame.x = atlasNode.rect.left + pad;
-            texture.frame.y = atlasNode.rect.top + pad;
-            texture.frame.width = elem.width;
-            texture.frame.height = elem.height;
-            texture.orig = texture.frame;
-            texture.updateUvs();
-        }
+            elem.texture = new PIXI.Texture(storage.baseTexture,
+                new PIXI.Rectangle(atlasNode.rect.left + pad,
+                    atlasNode.rect.top + pad, elem.width, elem.height));
 
-        calcPositions() {
-            const { addedElements, pad } = this;
-
-            for (let i = 0; i < addedElements.length; i++) {
-                this.calcElemPos(addedElements[i]);
+            if (prevAtlas)
+            {
+                // just after the relocation we allow to copy element data
+                // from previous location if its possible
+                elem.oldAtlasSprite = new PIXI.Sprite(elem.texture);
+                elem.oldAtlasSprite.position.set(elem.texture.frame.x, elem.texture.frame.y);
             }
         }
     }

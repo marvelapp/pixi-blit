@@ -32,9 +32,19 @@ namespace pixi_blit {
                 if (renderOnlyModified && mem.cacheStatus !== CacheStatus.Init) {
                     continue;
                 }
+
+                //TODO: use drawImage on old sprite
+                elem.oldAtlasSprite = null;
+
                 mem.cacheStatus = CacheStatus.Drawn;
-                this.atlas.calcElemPos(elem);
-                graphicsNode.render(renderer);
+                this.atlas.prepareRender(elem);
+
+                if (elem.oldAtlasSprite) {
+                    elem.oldAtlasSprite.render(renderer);
+                    elem.oldAtlasSprite = null;
+                } else {
+                    graphicsNode.render(renderer);
+                }
             }
         }
     }
@@ -44,8 +54,8 @@ namespace pixi_blit {
             super(CacheType.WebGL, options);
 
             const textureOptions = {
-                width: options.atlasMaxSize,
-                height: options.atlasMaxSize,
+                width: options.atlasSize,
+                height: options.atlasSize,
             };
 
             this.renderBuffer = RenderBuffer.create(renderer, textureOptions);
@@ -69,12 +79,11 @@ namespace pixi_blit {
             }
         }
 
-        createStorageFor(raster: RasterCache) {
-            const atlas = new WebGLAtlasStorage( {
-                width: raster.outerBounds.width,
-                height: raster.outerBounds.height,
+        createStorageBySize(size: PIXI.ISize) {
+            return new WebGLAtlasStorage({
+                width: size.width,
+                height: size.height
             });
-            return atlas;
         }
     }
 }

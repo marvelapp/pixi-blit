@@ -2,44 +2,46 @@ namespace pixi_blit {
     import AbstractAtlasStorage = pixi_blit.AbstractAtlasStorage;
 
     export interface IMultiAtlasOptions {
-        atlasMinSize: number;
-        atlasMaxSize: number;
+        atlasSize: number;
         webglAntialias?: boolean;
         canvasAntiConflation?: boolean;
 
         dim1MaxSize?: number;
         dim2MinSize?: number;
         dim2MaxSize?: number;
+        atlasAllowInsert?: boolean;
     }
 
     const lightQueue: Array<RasterCache> = [];
+    const newAtlases: Array<Atlas> = [];
 
     export class AtlasCollection {
         constructor(public readonly storage: AtlasCollectionStorage) {
             storage.bind(this);
+
+            this.textureOptions = {
+                width: storage.options.atlasSize,
+                height: storage.options.atlasSize,
+            }
         }
+
+        textureOptions: PIXI.ISize;
 
         list: Array<Atlas> = [];
         singles: Array<Atlas> = [];
+        drop: Array<Atlas> = [];
+        pool: Array<AbstractAtlasStorage> = [];
         //TODO: single elements instead of whole atlas?
 
         frameRasterQueue: Array<RasterCache> = [];
-        frameRasterMap: {[key: number]: RasterCache} = {};
+        frameRasterMap: { [key: number]: RasterCache } = {};
 
         gcEntries: { [key: number]: IGCEntry };
 
         addToQueue(raster: RasterCache) {
             this.frameRasterQueue.push(raster);
-            this.frameRasterMap[raster.uniqId] =  raster;
+            this.frameRasterMap[raster.uniqId] = raster;
             this.gcEntries[raster.uniqId] = raster;
-        }
-
-        /**
-         * precondition: gc objects have to be already marked as HANGING
-         * goes through all atlases, check which ones can be freed
-         */
-        gcTick() {
-
         }
 
         sortMethod = (a: RasterCache, b: RasterCache) => {
@@ -52,18 +54,25 @@ namespace pixi_blit {
         isBig = (elem: RasterCache) => {
             const min = Math.min(elem.width, elem.height);
             const max = Math.max(elem.width, elem.height);
-            const { options } = this.storage;
+            const {options} = this.storage;
 
             return max >= options.dim1MaxSize || min >= options.dim2MinSize && max >= options.dim2MaxSize;
         };
 
         cacheSingleElem(elem: RasterCache) {
-            const { storage, singles } = this;
-            const stor = storage.createStorageFor(elem);
+            const {storage, singles} = this;
+            const stor = storage.createStorageBySize(elem);
             const atlas = new Atlas(stor);
             atlas.pad = 0;
             atlas.insert(elem);
             singles.push(atlas);
+        }
+
+        takeFromPool() {
+            const atlas = new Atlas(this.pool.pop()
+                || this.storage.createStorageBySize(this.textureOptions));
+            this.list.push(atlas);
+            return atlas;
         }
 
         //TODO: move processQueue to strategy, leave only utility methods here
@@ -73,10 +82,10 @@ namespace pixi_blit {
          */
         processQueue() {
             const queue = this.frameRasterQueue;
-            const { isBig, storage, list } = this;
+            const {isBig, storage, list} = this;
 
             //1. move all the heavy objects to separate textures
-            for (let i=0;i<queue.length;i++) {
+            for (let i = 0; i < queue.length; i++) {
                 const elem = queue[i];
                 if (isBig(elem)) {
                     this.cacheSingleElem(elem);
@@ -85,14 +94,46 @@ namespace pixi_blit {
                 }
             }
 
+            if (lightQueue.length === 0) {
+                return;
+            }
             //2.
             lightQueue.sort(this.sortMethod);
+
+            const atlasList = storage.options.atlasAllowInsert ? list : newAtlases;
+
+            for (let i = 0; i < lightQueue.length; i++) {
+                const elem = lightQueue[i];
+
+                for (let j = 0; j < atlasList.length; j++) {
+                    if (atlasList[j].insert(elem)) {
+                        break;
+                    }
+                }
+                if (elem.newAtlas === null) {
+                    const newAtlas = this.takeFromPool();
+                    newAtlas.insert(elem);
+                    newAtlases.push(newAtlas);
+                }
+            }
 
             //new atlas and resizes here
 
             //TODO: allow blitter to use smaller area if possible
 
             lightQueue.length = 0;
+        }
+
+        /**
+         * precondition: gc objects have to be already marked as HANGING
+         * goes through all atlases, check which ones can be freed
+         */
+        gcTick() {
+
+        }
+
+        tryRepack() {
+            // take N best atlases, try combine them
         }
 
         prerender() {
@@ -110,20 +151,21 @@ namespace pixi_blit {
                 dim2MaxSize: 256,
                 webglAntialias: true,
                 canvasAntiConflation: false,
+                atlasAllowInsert: false,
 
-                atlasMaxSize: 1024,
-                atlasMinSize: 128,
+                atlasSize: 1024,
                 atlasDivStep: 128,
             });
         }
 
         collection: AtlasCollection = null;
+
         bind(collection: AtlasCollection) {
             this.collection = collection;
         }
 
         abstract render(): void;
 
-        abstract createStorageFor(raster: RasterCache): AbstractAtlasStorage;
+        abstract createStorageBySize(size: PIXI.ISize): AbstractAtlasStorage;
     }
 }

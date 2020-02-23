@@ -45,18 +45,21 @@ namespace pixi_blit {
                 const {graphicsNode, mem} = elem;
                 // detect mixed conflation content
 
-                if (renderOnlyModified && mem.cacheStatus !== CacheStatus.Init) {
+                if (renderOnlyModified && elem.atlas === atlas) {
                     continue;
                 }
 
                 // move modification id to atlas node?
                 elem.baseTexDirtyId = baseTex.dirtyId;
                 mem.cacheStatus = CacheStatus.Drawn;
-                atlas.calcElemPos(elem);
+                atlas.prepareRender(elem);
 
-                //TODO: clip here!
-
-                graphicsNode.renderCanvas(renderer);
+                if (elem.oldAtlasSprite) {
+                    elem.oldAtlasSprite.renderCanvas(renderer);
+                    elem.oldAtlasSprite = null;
+                } else {
+                    graphicsNode.renderCanvas(renderer);
+                }
             }
         }
     }
@@ -85,12 +88,11 @@ namespace pixi_blit {
             }
         }
 
-        createStorageFor(raster: RasterCache) {
-            const atlas = new CanvasAtlasStorage( {
-                width: raster.outerBounds.width,
-                height: raster.outerBounds.height,
+        createStorageBySize(size: PIXI.ISize) {
+            return new CanvasAtlasStorage({
+                width: size.width,
+                height: size.height
             });
-            return atlas;
         }
     }
 }

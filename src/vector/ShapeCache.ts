@@ -11,18 +11,24 @@ namespace pixi_blit {
         }
 
         init() {
-            const { atlases, renderer } = this;
+            const { renderer } = this;
 
-            const options: IMultiAtlasOptions = (Object as any).assign({
+            const canvasOptions: IMultiAtlasOptions = (Object as any).assign({
                 size: 1024,
                 textureCount: 30,
-                webglAntialias: true,
                 canvasAntiConflation: false,
             }, this. options);
 
-            this.registerAtlas(CacheType.Canvas2d, new CanvasStorage(renderer, options));
-            this.registerAtlas(CacheType.WebGL, new BlitterStorage(renderer, options));
-            this.registerAtlas(CacheType.RuntimeWebGL, new BlitterStorage(renderer, options));
+            const blitterOptions: IMultiAtlasOptions = (Object as any).assign({
+                size: 1024,
+                textureCount: 30,
+                webglAntialias: true,
+                atlasAllowInsert: false,
+            }, this. options);
+
+            this.registerAtlas(CacheType.Canvas2d, new CanvasStorage(renderer, canvasOptions));
+            this.registerAtlas(CacheType.WebGL, new BlitterStorage(renderer, blitterOptions));
+            // this.registerAtlas(CacheType.RuntimeWebGL, new BlitterStorage(renderer, options));
         }
 
         registerAtlas(type: CacheType, storage: AtlasCollectionStorage): AtlasCollection {
@@ -41,14 +47,17 @@ namespace pixi_blit {
 
         runners = {
             gcTick: new PIXI.Runner('gcTick'),
-            processQueue: new PIXI.Runner('prerender'),
+            processQueue: new PIXI.Runner('processQueue'),
             prerender: new PIXI.Runner('prerender'),
+            repack: new PIXI.Runner('repack'),
         };
 
         atlases: { [key in CacheType]: AtlasCollection} = [null, null, null, null, null] as any;
-        frameNum: number;
-        lastGcFrameNum: number;
-        gcNum: number;
+        frameNum = 0;
+        lastGcFrameNum = 0;
+        gcNum = 0;
+
+        tryRepack = false;
 
         maxBoundsForMips = 1024;
 
@@ -58,6 +67,9 @@ namespace pixi_blit {
             this.frameNum++;
             this.recFind(this.root, this.visitFrame);
             this.runners.processQueue.emit();
+            if (this.tryRepack) {
+                this.runners.repack.emit();
+            }
             this.runners.prerender.emit();
         }
 
@@ -172,6 +184,7 @@ namespace pixi_blit {
             }
             this.lastGcFrameNum = this.gcNum;
             this.runners.gcTick.emit();
+            this.tryRepack = true;
 
             // 1. Find all the graphics that have to be rendered on stage
             // 2. Mark old mips as aren't needed
