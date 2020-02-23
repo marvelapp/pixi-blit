@@ -1,5 +1,5 @@
 namespace pixi_blit {
-    import Atlas = pixi_blit.Atlas;
+
     const tempBounds = new PIXI.Bounds();
     const tempMat = new PIXI.Matrix();
 
@@ -11,20 +11,20 @@ namespace pixi_blit {
         }
 
         init() {
-            const { renderer } = this;
+            const {renderer} = this;
 
             const canvasOptions: IMultiAtlasOptions = (Object as any).assign({
                 size: 1024,
                 textureCount: 30,
                 canvasAntiConflation: false,
-            }, this. options);
+            }, this.options);
 
             const blitterOptions: IMultiAtlasOptions = (Object as any).assign({
                 size: 1024,
                 textureCount: 30,
                 webglAntialias: true,
                 atlasAllowInsert: false,
-            }, this. options);
+            }, this.options);
 
             this.registerAtlas(CacheType.Canvas2d, new CanvasStorage(renderer, canvasOptions));
             this.registerAtlas(CacheType.WebGL, new BlitterStorage(renderer, blitterOptions));
@@ -52,7 +52,7 @@ namespace pixi_blit {
             repack: new PIXI.Runner('repack'),
         };
 
-        atlases: { [key in CacheType]: AtlasCollection} = [null, null, null, null, null] as any;
+        atlases: { [key in CacheType]: AtlasCollection } = [null, null, null, null, null] as any;
         frameNum = 0;
         lastGcFrameNum = 0;
         gcNum = 0;
@@ -82,9 +82,10 @@ namespace pixi_blit {
         protected visitFrame = (elem: VectorSprite): void => {
             const {model} = elem;
 
-            const { graphics } = model;
+            const {graphics} = model;
 
             if (this.isEmpty(graphics)) {
+                elem.disable();
                 return;
             }
 
@@ -98,23 +99,19 @@ namespace pixi_blit {
                     if (mip.type === CacheType.Auto) {
                         mip.type = this.defaultCacheType;
                     }
-
+                    //TODO: call for vectorization if WebGL
                     this.atlases[mip.type].addToQueue(mip);
-                    // call for vectorization if WebGL
-                    // add to atlas here
                 }
-                elem.cacheType = mip.type;
-            }
-            else {
-                elem.cacheType = CacheType.No_Cache;
-                //TODO: runtime instanced
-                // check instanced stuff
-                // call for vectorization
+                elem.enableRaster(mip);
+                // elem check raster according to its position
+            } else {
+                //TODO: call for vectorization
+                elem.enableGraphics(model.graphics.geometry);
             }
         };
 
         mipBehaviour(elem: VectorSprite): RasterCache {
-            const { model } = elem;
+            const {model} = elem;
             const mat = tempMat.copyFrom(elem.transform.worldTransform);
             const elemBounds = tempBounds;
 
@@ -147,7 +144,13 @@ namespace pixi_blit {
             let raster = model.mipCache[mipLevel];
 
             if (raster) {
-                return raster;
+                if (raster.mem.cacheStatus === CacheStatus.Disposed) {
+                    // in case its already disposed
+                    // report re-creation to statistics!
+                    delete model.mipCache[mipLevel];
+                } else {
+                    return raster;
+                }
             }
 
             mat.a = mat.d = Math.pow(2, mipLevel);

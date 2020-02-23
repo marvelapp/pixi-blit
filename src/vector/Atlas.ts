@@ -20,17 +20,26 @@ namespace pixi_blit {
         bind(atlas: Atlas) {
             this.atlas = atlas;
         }
+
+        unbind() {
+            this.atlas = null;
+        }
     }
 
     export class Atlas {
         root = new AtlasNode<RasterCache>();
         addedElements: Array<RasterCache> = [];
         pad: number = 1;
+        isSingle = false;
         totalArea = 0;
-        holdArea = 0;
+        usedArea = 0;
         drawnElements = 0;
 
+        mem = new MemoryComponent();
+
+        uniqId: number;
         constructor(public readonly storage: AbstractAtlasStorage) {
+            this.uniqId = generateUid();
             storage.bind(this);
         }
 
@@ -42,6 +51,11 @@ namespace pixi_blit {
             return this.storage.type;
         }
 
+        markSingle() {
+            this.pad = 0;
+            this.isSingle = true;
+        }
+
         hasNew() {
             return this.drawnElements < this.addedElements.length;
         }
@@ -50,8 +64,21 @@ namespace pixi_blit {
             this.drawnElements = this.addedElements.length;
         }
 
+        destroy() {
+            const {addedElements} = this;
+
+            this.mem.cacheStatus = CacheStatus.Disposed;
+            (this as any).storage = null;
+            for (let i=0;i<addedElements.length;i++) {
+                const elem = addedElements[i];
+                if (elem.mem.cacheStatus === CacheStatus.Hanging) {
+                    elem.destroy();
+                }
+            }
+        }
 
         protected createAtlasRoot(): AtlasNode<RasterCache> {
+            // created only one time!
             let res = AtlasNode.allocate<RasterCache>();
             res.rect.width = this.options.width;
             res.rect.height = this.options.height;
@@ -63,7 +90,7 @@ namespace pixi_blit {
             elem.newAtlasNode = root.insert(elem.width + 2 * pad, elem.height + 2 * pad, elem);
 
             this.totalArea += elem.area;
-            this.holdArea += elem.area;
+            this.usedArea += elem.area;
 
             if (elem.newAtlasNode) {
                 this.addedElements.push(elem);
@@ -79,7 +106,7 @@ namespace pixi_blit {
             this.root = this.createAtlasRoot();
             this.addedElements.length = 0;
             this.totalArea = 0;
-            this.holdArea = 0;
+            this.usedArea = 0;
             this.drawnElements = 0;
         }
 
@@ -95,7 +122,7 @@ namespace pixi_blit {
                 }
             }
 
-            this.holdArea = holdArea;
+            this.usedArea = holdArea;
 
             return holdArea;
         }
@@ -126,7 +153,7 @@ namespace pixi_blit {
             elem.newAtlas = null;
             elem.newAtlasNode = null;
 
-            const {graphicsNode, atlasNode, outerBounds, oldAtlasSprite} = elem;
+            const {graphicsNode, atlasNode, outerBounds} = elem;
 
             graphicsNode.transform.position.set(
                 -outerBounds.x + pad + atlasNode.rect.left,
@@ -140,10 +167,15 @@ namespace pixi_blit {
 
             if (prevAtlas)
             {
-                // just after the relocation we allow to copy element data
-                // from previous location if its possible
-                elem.oldAtlasSprite = new PIXI.Sprite(elem.texture);
-                elem.oldAtlasSprite.position.set(elem.texture.frame.x, elem.texture.frame.y);
+                if (elem.oldAtlasSprite) {
+                    // moved two times? CURSED! drop it!
+                    elem.oldAtlasSprite = null;
+                } else {
+                    // just after the relocation we allow to copy element data
+                    // from previous location if its possible
+                    elem.oldAtlasSprite = new PIXI.Sprite(elem.texture);
+                    elem.oldAtlasSprite.position.set(elem.texture.frame.x, elem.texture.frame.y);
+                }
             }
         }
     }

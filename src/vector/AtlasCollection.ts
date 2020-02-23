@@ -10,6 +10,7 @@ namespace pixi_blit {
         dim2MinSize?: number;
         dim2MaxSize?: number;
         atlasAllowInsert?: boolean;
+        mergeThreshold?: number;
     }
 
     const lightQueue: Array<RasterCache> = [];
@@ -28,10 +29,9 @@ namespace pixi_blit {
         textureOptions: PIXI.ISize;
 
         list: Array<Atlas> = [];
-        singles: Array<Atlas> = [];
+        singles: { [key: number]: Atlas } = {};
         drop: Array<Atlas> = [];
         pool: Array<AbstractAtlasStorage> = [];
-        //TODO: single elements instead of whole atlas?
 
         frameRasterQueue: Array<RasterCache> = [];
         frameRasterMap: { [key: number]: RasterCache } = {};
@@ -44,7 +44,7 @@ namespace pixi_blit {
             this.gcEntries[raster.uniqId] = raster;
         }
 
-        sortMethod = (a: RasterCache, b: RasterCache) => {
+        elemSortMethod = (a: RasterCache, b: RasterCache) => {
             if (b.width == a.width) {
                 return b.height - a.height;
             }
@@ -63,9 +63,9 @@ namespace pixi_blit {
             const {storage, singles} = this;
             const stor = storage.createStorageBySize(elem);
             const atlas = new Atlas(stor);
-            atlas.pad = 0;
+            atlas.markSingle();
             atlas.insert(elem);
-            singles.push(atlas);
+            singles[atlas.uniqId] = atlas;
         }
 
         takeFromPool() {
@@ -98,9 +98,11 @@ namespace pixi_blit {
                 return;
             }
             //2.
-            lightQueue.sort(this.sortMethod);
+            lightQueue.sort(this.elemSortMethod);
 
             const atlasList = storage.options.atlasAllowInsert ? list : newAtlases;
+
+            //TODO: try add to last atlas with repack, if possible, like in @mbusyrev algo
 
             for (let i = 0; i < lightQueue.length; i++) {
                 const elem = lightQueue[i];
@@ -132,13 +134,116 @@ namespace pixi_blit {
 
         }
 
+        atlasSortMethod = (a: Atlas, b: Atlas) => {
+            if (a.usedArea - b.usedArea > 0) {
+                return 1;
+            }
+            if (a.usedArea - b.usedArea < 0) {
+                return -1;
+            }
+            return 0;
+        };
+
+        removeAtlas(atlas: Atlas) {
+            const {list, pool} = this;
+
+            if (atlas.isSingle) {
+                //single!
+                delete this.singles[atlas.uniqId];
+                atlas.destroy();
+            } else {
+                const ind = list.indexOf(atlas);
+                if (ind < 0) {
+                    throw new Error('removed atlas not found in the list');
+                }
+                list.splice(ind, 1);
+                atlas.mem.cacheStatus = CacheStatus.Hanging;
+                this.drop.push(atlas);
+            }
+
+            atlas.storage.unbind();
+            pool.push(atlas.storage);
+        }
+
         tryRepack() {
+            const {list} = this;
+            for (let i = 0; i < list.length; i++) {
+                list[i].calcHoldArea();
+            }
+            list.sort(this.atlasSortMethod);
             // take N best atlases, try combine them
+            let N = 0;
+            const {atlasSize, mergeThreshold} = this.storage.options;
+
+            while (list.length > 1 && list[0].usedArea === 0) {
+                this.removeAtlas(list[0]);
+            }
+
+            //TODO: also use changed tick?
+            if (list.length >= 2) {
+                if (list[0].usedArea + list[1].usedArea < atlasSize * atlasSize * mergeThreshold) {
+                    N = 2;
+                }
+            } else if (list.length >= 3) {
+                if (list[0].usedArea + list[1].usedArea + list[2].usedArea < 2 * atlasSize * atlasSize * mergeThreshold) {
+                    N = 3;
+                }
+            }
+
+            for (let j = 0; j < N; j++) {
+                for (let i = 0; i < list[j].addedElements.length; i++) {
+                    const elem = list[j].addedElements[i];
+                    if (elem.mem.cacheStatus <= CacheStatus.Drawn) {
+                        lightQueue.push(elem);
+                    }
+                }
+            }
+
+            lightQueue.sort(this.elemSortMethod);
+            for (let j = 0; j + 1 < N; j++) {
+                newAtlases.push(this.takeFromPool());
+            }
+
+            lightQueue.sort(this.elemSortMethod);
+
+            let failFlag = false;
+
+            for (let i = 0; i < lightQueue.length; i++) {
+                const elem = lightQueue[i];
+
+                for (let j = 0; j < newAtlases.length; j++) {
+                    if (newAtlases[j].insert(elem)) {
+                        break;
+                    }
+                }
+                if (elem.newAtlas === null) {
+                    failFlag = true;
+                    break;
+                }
+            }
+
+            if (failFlag) {
+                list.length = list.length - newAtlases.length;
+                newAtlases.length = 0;
+            } else {
+                for (let j = N - 1; j >= 0; j--) {
+                    this.removeAtlas(list[j]);
+                }
+            }
         }
 
         prerender() {
             // takes frame queue and rasterizes everything
             this.storage.render();
+            this.cleanup();
+        }
+
+        cleanup() {
+            const {drop} = this;
+            for (let i = 0; i < drop.length; i++) {
+                drop[i].destroy();
+            }
+            drop.length = 0;
         }
     }
 
@@ -155,6 +260,7 @@ namespace pixi_blit {
 
                 atlasSize: 1024,
                 atlasDivStep: 128,
+                mergeThreshold: 0.8
             });
         }
 
