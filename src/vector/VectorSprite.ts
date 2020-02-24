@@ -56,9 +56,10 @@ namespace pixi_blit {
         _render(renderer: PIXI.Renderer) {
             const {activeRaster, activeGraphics, activeSprite} = this;
             if (activeRaster) {
-                // render raster
+                (activeSprite as any).worldAlpha = this.worldAlpha;
                 (activeSprite as any)._render(renderer);
             } else if (activeGraphics) {
+                (activeGraphics as any).worldAlpha = this.worldAlpha;
                 (activeGraphics as any)._render(renderer);
             } else {
                 // ??? guess no graphics for us, render a marker?

@@ -36,7 +36,7 @@ namespace pixi_blit {
         frameRasterQueue: Array<RasterCache> = [];
         frameRasterMap: { [key: number]: RasterCache } = {};
 
-        gcEntries: { [key: number]: IGCEntry };
+        gcEntries: { [key: number]: IGCEntry } = {};
 
         addToQueue(raster: RasterCache) {
             this.frameRasterQueue.push(raster);

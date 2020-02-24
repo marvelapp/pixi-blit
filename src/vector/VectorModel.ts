@@ -21,7 +21,7 @@ namespace pixi_blit {
         // works with canvas2d
         conflationMode = CANVAS_CONFLATION_MODE.AUTO;
 
-        mipCache: Array<RasterCache>;
+        mipCache: Array<RasterCache> = [];
         instances: { [uniqId: number]: RasterCache };
         instanceCache: { [uniqId: number]: RasterCache };
 
