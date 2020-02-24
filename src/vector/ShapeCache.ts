@@ -53,6 +53,7 @@ namespace pixi_blit {
         };
 
         atlases: { [key in CacheType]: AtlasCollection } = [null, null, null, null, null] as any;
+        activeElements: Array<VectorSprite> = [];
         frameNum = 0;
         lastGcFrameNum = 0;
         gcNum = 0;
@@ -64,13 +65,20 @@ namespace pixi_blit {
         defaultCacheType = CacheType.WebGL;
 
         public frameTick() {
+            const {activeElements, runners} = this;
+
             this.frameNum++;
+            activeElements.length = 0;
             this.recFind(this.root, this.visitFrame);
-            this.runners.processQueue.emit();
+            runners.processQueue.emit();
             if (this.tryRepack) {
-                this.runners.repack.emit();
+                runners.repack.emit();
+                this.tryRepack = false;
             }
             this.runners.prerender.emit();
+            for (let i = 0; i < activeElements.length; i++) {
+                activeElements[i].prerender();
+            }
         }
 
         //TODO: move method to graphics class
@@ -83,6 +91,8 @@ namespace pixi_blit {
             const {model} = elem;
 
             const {graphics} = model;
+
+            this.activeElements.push(elem);
 
             if (this.isEmpty(graphics)) {
                 elem.disable();
