@@ -39,6 +39,9 @@ namespace pixi_blit {
         gcEntries: { [key: number]: IGCEntry } = {};
 
         addToQueue(raster: RasterCache) {
+            if (this.frameRasterMap[raster.uniqId]) {
+                return;
+            }
             this.frameRasterQueue.push(raster);
             this.frameRasterMap[raster.uniqId] = raster;
             this.gcEntries[raster.uniqId] = raster;
@@ -65,6 +68,10 @@ namespace pixi_blit {
             const atlas = new Atlas(stor);
             atlas.markSingle();
             atlas.insert(elem);
+            if (!elem.newAtlas) {
+                throw new Error("Cant add element in single atlas");
+            }
+
             singles[atlas.uniqId] = atlas;
         }
 
@@ -93,6 +100,7 @@ namespace pixi_blit {
                     lightQueue.push(elem);
                 }
             }
+            queue.length = 0;
 
             if (lightQueue.length === 0) {
                 return;
@@ -115,6 +123,9 @@ namespace pixi_blit {
                 if (elem.newAtlas === null) {
                     const newAtlas = this.takeFromPool();
                     newAtlas.insert(elem);
+                    if (!elem.newAtlas) {
+                        throw new Error("Cant add element in shared atlas");
+                    }
                     newAtlases.push(newAtlas);
                 }
             }

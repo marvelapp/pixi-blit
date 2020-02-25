@@ -27,7 +27,7 @@ namespace pixi_blit {
     }
 
     export class Atlas {
-        root = new AtlasNode<RasterCache>();
+        root: AtlasNode<RasterCache> = null;
         addedElements: Array<RasterCache> = [];
         pad: number = 1;
         isSingle = false;
@@ -40,6 +40,7 @@ namespace pixi_blit {
         uniqId: number;
         constructor(public readonly storage: AbstractAtlasStorage) {
             this.uniqId = generateUid();
+            this.root = this.createAtlasRoot();
             storage.bind(this);
         }
 
@@ -93,6 +94,7 @@ namespace pixi_blit {
             this.usedArea += elem.area;
 
             if (elem.newAtlasNode) {
+                elem.newAtlas = this;
                 this.addedElements.push(elem);
                 return true;
             }
