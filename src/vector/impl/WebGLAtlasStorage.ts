@@ -1,5 +1,7 @@
 ///<reference path="../AtlasCollection.ts"/>
 namespace pixi_blit {
+    import Atlas = pixi_blit.Atlas;
+
     export class WebGLAtlasStorage extends AbstractAtlasStorage {
         rt: PIXI.RenderTexture = null;
         rootContainer = new PIXI.Container();
@@ -63,20 +65,16 @@ namespace pixi_blit {
 
         renderBuffer: RenderBuffer = null;
 
-        render() {
+        renderSingle(atlas: Atlas) {
             const {renderBuffer} = this;
-            const {list} = this.collection;
-            for (let j = 0; j < list.length; j++) {
-                const atlas = list[j];
-                if (!atlas.hasNew()) {
-                    continue;
-                }
-                atlas.markClean();
-
-                const storage = atlas.storage as WebGLAtlasStorage;
-                //TODO: blit only modified parts
-                renderBuffer.renderAndBlit(storage.rootContainer, storage.rt);
+            if (!atlas.hasNew()) {
+                return;
             }
+            atlas.markClean();
+
+            const storage = atlas.storage as WebGLAtlasStorage;
+            //TODO: blit only modified parts
+            renderBuffer.renderAndBlit(storage.rootContainer, storage.rt, true);
         }
 
         createStorageBySize(size: PIXI.ISize) {

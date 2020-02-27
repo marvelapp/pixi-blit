@@ -30,6 +30,7 @@ namespace pixi_blit {
 
         list: Array<Atlas> = [];
         singles: { [key: number]: Atlas } = {};
+        newSingles: Array<Atlas> = [];
         drop: Array<Atlas> = [];
         pool: Array<AbstractAtlasStorage> = [];
 
@@ -63,7 +64,7 @@ namespace pixi_blit {
         };
 
         cacheSingleElem(elem: RasterCache) {
-            const {storage, singles} = this;
+            const {storage, singles, newSingles} = this;
             const stor = storage.createStorageBySize(elem);
             const atlas = new Atlas(stor);
             atlas.markSingle();
@@ -72,6 +73,7 @@ namespace pixi_blit {
                 throw new Error("Cant add element in single atlas");
             }
 
+            newSingles.push(atlas);
             singles[atlas.uniqId] = atlas;
         }
 
@@ -281,7 +283,18 @@ namespace pixi_blit {
             this.collection = collection;
         }
 
-        abstract render(): void;
+        render() {
+            const {list, newSingles} = this.collection;
+            for (let j = 0; j < list.length; j++) {
+                this.renderSingle(list[j]);
+            }
+            for (let j = 0; j < newSingles.length; j++) {
+                this.renderSingle(newSingles[j]);
+            }
+            newSingles.length = 0;
+        }
+
+        abstract renderSingle(atlas: Atlas): void;
 
         abstract createStorageBySize(size: PIXI.ISize): AbstractAtlasStorage;
     }

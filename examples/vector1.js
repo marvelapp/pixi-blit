@@ -29,10 +29,11 @@ app.stage.addChild(inst1, inst2, inst3);
 
 inst1.position.set(120, 120);
 inst2.position.set(120, 340);
-inst3.position.set(320, 120);
+inst3.position.set(500, 290);
 
 let phase = 0;
 app.ticker.add((delta) => {
-    phase += 0.1 * delta;
-    inst3.scale.set(Math.exp(Math.sin(phase)));
+    phase += 0.01 * delta;
+    inst2.position.y = 410 - 70 * Math.cos(2 * phase);
+    inst3.scale.set(Math.exp(Math.sin(-phase)));
 });

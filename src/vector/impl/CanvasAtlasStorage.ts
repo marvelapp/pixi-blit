@@ -72,20 +72,16 @@ namespace pixi_blit {
         renderBuffer: RenderBuffer = null;
         canvasRenderer = new PIXI.CanvasRenderer();
 
-        render() {
-            const {canvasRenderer} = this;
-            const {list} = this.collection;
-            for (let j = 0; j < list.length; j++) {
-                const atlas = list[j];
-                if (!atlas.hasNew()) {
-                    continue;
-                }
-                atlas.markClean();
-
-                const storage = atlas.storage as CanvasAtlasStorage;
-                canvasRenderer.render(storage.rootContainer, storage.canvasRt);
-                this.renderer.texture.bind(storage.baseTex, 0);
+        renderSingle(atlas: Atlas) {
+            const {canvasRenderer, renderer} = this;
+            if (!atlas.hasNew()) {
+                return;
             }
+            atlas.markClean();
+
+            const storage = atlas.storage as CanvasAtlasStorage;
+            canvasRenderer.render(storage.rootContainer, storage.canvasRt);
+            renderer.texture.bind(storage.baseTex, 0);
         }
 
         createStorageBySize(size: PIXI.ISize) {

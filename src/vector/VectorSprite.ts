@@ -42,9 +42,10 @@ namespace pixi_blit {
                     this.activeSprite = new PIXI.Sprite();
                 }
                 const {transform} = this.activeSprite;
+                this.activeSprite.texture = activeRaster.texture;
                 tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
-                tempMat.tx -= activeRaster.outerBounds.x;
-                tempMat.ty -= activeRaster.outerBounds.y;
+                tempMat.tx = -activeRaster.outerBounds.x;
+                tempMat.ty = -activeRaster.outerBounds.y;
                 tempMat.invert();
                 transform.setFromMatrix(tempMat);
                 transform.updateTransform(this.transform);
