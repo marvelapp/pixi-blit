@@ -21,11 +21,11 @@ namespace pixi_blit {
         }
 
         get canvas(): HTMLCanvasElement {
-            return (this.canvasRt as any)._canvasRenderTarget.canvas;
+            return (this.canvasRt as any).baseTexture._canvasRenderTarget.canvas;
         }
 
         get context(): CanvasRenderingContext2D {
-            return (this.canvasRt as any)._canvasRenderTarget.context;
+            return (this.canvasRt as any).baseTexture._canvasRenderTarget.context;
         }
 
         renderOnlyModified = true;

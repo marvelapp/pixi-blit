@@ -5,7 +5,6 @@ namespace pixi_blit {
         instance: VectorSprite;
 
         mem = new MemoryComponent();
-        area = 0;
         type = CacheType.Auto;
         // atlas modifies those objects
         graphicsNode: PIXI.Graphics = null;
@@ -27,6 +26,10 @@ namespace pixi_blit {
             this.graphicsNode = new PIXI.Graphics(model.graphics.geometry);
             this.graphicsNode.transform.setFromMatrix(mat);
             this.outerBounds = this.graphicsNode.getBounds();
+        }
+
+        get area() {
+            return this.outerBounds.width * this.outerBounds.height;
         }
 
         get width() {

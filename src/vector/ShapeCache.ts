@@ -49,7 +49,7 @@ namespace pixi_blit {
             gcTick: new PIXI.Runner('gcTick'),
             processQueue: new PIXI.Runner('processQueue'),
             prerender: new PIXI.Runner('prerender'),
-            repack: new PIXI.Runner('repack'),
+            tryRepack: new PIXI.Runner('tryRepack'),
         };
 
         atlases: { [key in CacheType]: AtlasCollection } = [null, null, null, null, null] as any;
@@ -72,7 +72,7 @@ namespace pixi_blit {
             this.recFind(this.root, this.visitFrame);
             runners.processQueue.emit();
             if (this.tryRepack) {
-                runners.repack.emit();
+                runners.tryRepack.emit();
                 this.tryRepack = false;
             }
             this.runners.prerender.emit();

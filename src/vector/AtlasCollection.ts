@@ -137,6 +137,7 @@ namespace pixi_blit {
             //TODO: allow blitter to use smaller area if possible
 
             lightQueue.length = 0;
+            newAtlases.length = 0;
         }
 
         /**
@@ -188,7 +189,7 @@ namespace pixi_blit {
             let N = 0;
             const {atlasSize, mergeThreshold} = this.storage.options;
 
-            while (list.length > 1 && list[0].usedArea === 0) {
+            while (list.length >= 1 && list[0].usedArea === 0) {
                 this.removeAtlas(list[0]);
             }
 
@@ -237,12 +238,13 @@ namespace pixi_blit {
 
             if (failFlag) {
                 list.length = list.length - newAtlases.length;
-                newAtlases.length = 0;
             } else {
                 for (let j = N - 1; j >= 0; j--) {
                     this.removeAtlas(list[j]);
                 }
             }
+            lightQueue.length = 0;
+            newAtlases.length = 0;
         }
 
         prerender() {

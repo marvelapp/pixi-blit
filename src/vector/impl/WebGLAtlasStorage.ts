@@ -41,6 +41,7 @@ namespace pixi_blit {
                 mem.cacheStatus = CacheStatus.Drawn;
                 this.atlas.prepareRender(elem);
 
+                //TODO: old sprites should be blit on top of result, not to blit thingy!
                 if (elem.oldAtlasSprite) {
                     elem.oldAtlasSprite.render(renderer);
                     elem.oldAtlasSprite = null;

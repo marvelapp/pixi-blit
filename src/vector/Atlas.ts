@@ -149,6 +149,7 @@ namespace pixi_blit {
             }
 
             const prevAtlas = elem.atlas;
+            const oldTexture = elem.texture;
 
             elem.atlas = this;
             elem.atlasNode = elem.newAtlasNode;
@@ -160,8 +161,7 @@ namespace pixi_blit {
             graphicsNode.transform.position.set(
                 -outerBounds.x + pad + atlasNode.rect.left,
                 -outerBounds.y + pad + atlasNode.rect.top);
-            graphicsNode.transform.updateLocalTransform();
-            graphicsNode.transform.worldTransform.copyFrom(graphicsNode.transform.localTransform);
+            graphicsNode._recursivePostUpdateTransform();
 
             elem.texture = new PIXI.Texture(storage.baseTexture,
                 new PIXI.Rectangle(atlasNode.rect.left + pad,
@@ -175,8 +175,9 @@ namespace pixi_blit {
                 } else {
                     // just after the relocation we allow to copy element data
                     // from previous location if its possible
-                    elem.oldAtlasSprite = new PIXI.Sprite(elem.texture);
+                    const sprite = elem.oldAtlasSprite = new PIXI.Sprite(oldTexture);
                     elem.oldAtlasSprite.position.set(elem.texture.frame.x, elem.texture.frame.y);
+                    sprite._recursivePostUpdateTransform();
                 }
             }
         }
