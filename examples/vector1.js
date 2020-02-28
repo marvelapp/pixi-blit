@@ -1,4 +1,4 @@
-const app = new PIXI.Application({antialias: false});
+const app = new PIXI.Application({antialias: false/*, autoStart: false*/});
 document.body.appendChild(app.view);
 
 const shapeCache = new PIXI.blit.ShapeCache(app.renderer, app.stage, {});
@@ -37,3 +37,6 @@ app.ticker.add((delta) => {
     inst2.position.y = 410 - 70 * Math.cos(2 * phase);
     inst3.scale.set(Math.exp(Math.sin(-phase)));
 });
+
+// shapeCache.frameTick();
+// app.render();

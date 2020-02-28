@@ -33,6 +33,18 @@ namespace pixi_blit {
             this.activeSprite = null;
         }
 
+        updateTransform() {
+            super.updateTransform();
+            if (this.activeSprite) {
+                this.activeSprite.transform.updateTransform(this.transform);
+                (this.activeSprite as any).worldAlpha = this.worldAlpha;
+            }
+            if (this.activeGraphics) {
+                this.activeGraphics.transform.updateTransform(this.transform);
+                (this.activeGraphics as any).worldAlpha = this.worldAlpha;
+            }
+        }
+
         prerender() {
             const {activeRaster, activeGraphics} = this;
 
@@ -41,26 +53,20 @@ namespace pixi_blit {
                 if (!this.activeSprite) {
                     this.activeSprite = new PIXI.Sprite();
                 }
-                const {transform} = this.activeSprite;
                 this.activeSprite.texture = activeRaster.texture;
                 tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
                 tempMat.tx = -activeRaster.outerBounds.x;
                 tempMat.ty = -activeRaster.outerBounds.y;
                 tempMat.invert();
-                transform.setFromMatrix(tempMat);
-                transform.updateTransform(this.transform);
-            } else if (activeGraphics) {
-                activeGraphics.transform.worldTransform.copyFrom(this.transform.worldTransform);
+                this.activeSprite.transform.setFromMatrix(tempMat);
             }
         }
 
         _render(renderer: PIXI.Renderer) {
             const {activeRaster, activeGraphics, activeSprite} = this;
             if (activeRaster) {
-                (activeSprite as any).worldAlpha = this.worldAlpha;
                 (activeSprite as any)._render(renderer);
             } else if (activeGraphics) {
-                (activeGraphics as any).worldAlpha = this.worldAlpha;
                 (activeGraphics as any)._render(renderer);
             } else {
                 // ??? guess no graphics for us, render a marker?

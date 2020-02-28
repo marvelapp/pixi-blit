@@ -76,6 +76,9 @@ namespace pixi_blit {
                 this.tryRepack = false;
             }
             this.runners.prerender.emit();
+
+            // before or after FOR, depending on mechanism of updateTransform, we might have to call it
+            // this.root.updateTransform()
             for (let i = 0; i < activeElements.length; i++) {
                 activeElements[i].prerender();
             }
