@@ -1,3 +1,5 @@
+PIXI.settings.PREFER_ENV = PIXI.ENV.WEBGL;
+
 const app = new PIXI.Application({antialias: false/*, autoStart: false*/});
 document.body.appendChild(app.view);
 

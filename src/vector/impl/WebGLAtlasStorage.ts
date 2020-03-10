@@ -17,13 +17,15 @@ namespace pixi_blit {
         }
 
         renderOnlyModified = false;
+        renderCopySeparate = false;
+        copies: Array<PIXI.Sprite> = [];
 
         /**
          * called from blitterCache
          * @param renderer
          */
         render = (renderer: PIXI.Renderer) => {
-            const {atlas, renderOnlyModified} = this;
+            const {atlas, renderOnlyModified, renderCopySeparate, copies} = this;
             const {addedElements} = atlas;
             // render only new elements
 
@@ -43,12 +45,26 @@ namespace pixi_blit {
 
                 //TODO: old sprites should be blit on top of result, not to blit thingy!
                 if (elem.oldAtlasSprite) {
-                    elem.oldAtlasSprite.render(renderer);
+                    if (renderCopySeparate) {
+                        copies.push(elem.oldAtlasSprite);
+                    } else {
+                        elem.oldAtlasSprite.render(renderer);
+                    }
                     elem.oldAtlasSprite = null;
                 } else {
                     graphicsNode.render(renderer);
                 }
             }
+        };
+
+        renderCopies(renderer: PIXI.Renderer) {
+            const { copies } = this;
+
+            for (let i = 0; i < copies.length; i++) {
+                copies[i].render(renderer);
+            }
+
+            copies.length = 0;
         }
     }
 
@@ -67,15 +83,24 @@ namespace pixi_blit {
         renderBuffer: RenderBuffer = null;
 
         renderSingle(atlas: Atlas) {
-            const {renderBuffer} = this;
+            const {renderBuffer, renderer} = this;
             if (!atlas.hasNew()) {
                 return;
             }
             atlas.markClean();
 
             const storage = atlas.storage as WebGLAtlasStorage;
+
+            storage.renderCopySeparate = true;
+
             //TODO: blit only modified parts
             renderBuffer.renderAndBlit(storage.rootContainer, storage.rt, true);
+
+            if (storage.copies.length > 0) {
+                renderer.renderTexture.bind(storage.rt);
+                storage.renderCopies(renderer);
+                renderer.batch.flush();
+            }
         }
 
         createStorageBySize(size: PIXI.ISize) {
