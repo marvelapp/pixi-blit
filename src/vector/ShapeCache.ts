@@ -2,6 +2,7 @@ namespace pixi_blit {
 
     const tempBounds = new PIXI.Bounds();
     const tempMat = new PIXI.Matrix();
+    const tempRasters: Array<RasterCache> = [];
 
     export class ShapeCache {
         constructor(public renderer: PIXI.Renderer,
@@ -10,8 +11,15 @@ namespace pixi_blit {
             this.init();
         }
 
+        /**
+         * number of gc ticks after which element will expire
+         */
+        gcExpire = 100;
+
         init() {
             const {renderer} = this;
+
+            this.gcExpire = 100;
 
             const canvasOptions: IMultiAtlasOptions = (Object as any).assign({
                 size: 1024,
@@ -42,8 +50,8 @@ namespace pixi_blit {
             return collection;
         }
 
-
-        models: { [key: number]: VectorModel };
+        models: { [key: number]: VectorModel } = {};
+        rasters: { [key: number]: RasterCache } = {};
 
         runners = {
             gcTick: new PIXI.Runner('gcTick'),
@@ -116,6 +124,9 @@ namespace pixi_blit {
                     this.atlases[mip.type].addToQueue(mip);
                 }
                 elem.enableRaster(mip);
+
+                //TODO: touch has to be called for static elements in case they didnt appear in visitFrame
+                mip.mem.touchFrame(this.frameNum);
                 // elem check raster according to its position
             } else {
                 //TODO: call for vectorization
@@ -175,6 +186,8 @@ namespace pixi_blit {
             }
             // RasterCache sets its transformedBounds in constructor
             raster = model.mipCache[mipLevel] = new RasterCache(model, mat);
+            raster.mem.expire = this.gcExpire;
+            this.rasters[raster.uniqId] = raster;
 
             return raster;
         }
@@ -194,11 +207,25 @@ namespace pixi_blit {
 
         public gcTick() {
             this.gcNum++;
-            for (let key in this.models) {
-                let model = this.models[key];
-                model.mem.touchGc(this.gcNum, this.lastGcFrameNum);
+
+            for (let key in this.rasters) {
+                const raster = this.rasters[key];
+                const {mem} = raster;
+
+                if (mem.cacheStatus === CacheStatus.Disposed) {
+                    // something was disposed in prev tick
+                    tempRasters.push(raster);
+                }
+
+                mem.touchGc(this.gcNum, this.lastGcFrameNum);
             }
-            this.lastGcFrameNum = this.gcNum;
+
+            for (let i = 0; i < tempRasters.length; i++) {
+                delete this.rasters[tempRasters[i].uniqId];
+            }
+            tempRasters.length = 0;
+
+            this.lastGcFrameNum = this.frameNum;
             this.runners.gcTick.emit();
             this.tryRepack = true;
 

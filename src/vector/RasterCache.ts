@@ -1,6 +1,5 @@
 namespace pixi_blit {
     export class RasterCache implements IGCEntry {
-        key: string;
         outerBounds: PIXI.Rectangle = null;
         instance: VectorSprite;
 

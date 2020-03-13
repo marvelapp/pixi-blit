@@ -61,6 +61,20 @@ namespace pixi_blit {
                     graphicsNode.renderCanvas(renderer);
                 }
             }
+        };
+
+        dispose()
+        {
+            this.baseTexture.dispose();
+
+            const bt = (this.canvasRt as any).baseTexture;
+
+            if (bt._canvasRenderTarget)
+            {
+                // free canvas
+                bt._canvasRenderTarget.canvas.width = 0;
+                bt._canvasRenderTarget.canvas.height = 0;
+            }
         }
     }
 
@@ -80,7 +94,7 @@ namespace pixi_blit {
             atlas.markClean();
 
             const storage = atlas.storage as CanvasAtlasStorage;
-            canvasRenderer.render(storage.rootContainer, storage.canvasRt);
+            canvasRenderer.render(storage.rootContainer, storage.canvasRt, false);
             renderer.texture.bind(storage.baseTex, 0);
         }
 

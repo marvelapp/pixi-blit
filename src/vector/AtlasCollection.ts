@@ -1,6 +1,4 @@
 namespace pixi_blit {
-    import AbstractAtlasStorage = pixi_blit.AbstractAtlasStorage;
-
     export interface IMultiAtlasOptions {
         atlasSize: number;
         webglAntialias?: boolean;
@@ -145,7 +143,25 @@ namespace pixi_blit {
          * goes through all atlases, check which ones can be freed
          */
         gcTick() {
+            const {list, singles} = this;
 
+            //TODO: limit the number of dropped atlases per one gc?
+
+            for (let i = 0; i < list.length; i++) {
+                const atlas = list[i];
+                atlas.calcHoldArea();
+                if (atlas.usedArea === 0) {
+                    this.removeAtlas(atlas);
+                }
+            }
+
+            for (let key in singles) {
+                const atlas = singles[key];
+
+                if (atlas.addedElements[0].mem.cacheStatus === CacheStatus.Hanging) {
+                    this.removeAtlas(atlas);
+                }
+            }
         }
 
         atlasSortMethod = (a: Atlas, b: Atlas) => {
@@ -159,22 +175,23 @@ namespace pixi_blit {
         };
 
         removeAtlas(atlas: Atlas) {
-            const {list, pool} = this;
+            const {list, pool, frameRasterMap} = this;
 
             if (atlas.isSingle) {
                 //single!
                 delete this.singles[atlas.uniqId];
+                atlas.storage.dispose();
                 atlas.destroy();
-            } else {
-                const ind = list.indexOf(atlas);
-                if (ind < 0) {
-                    throw new Error('removed atlas not found in the list');
-                }
-                list.splice(ind, 1);
-                atlas.mem.cacheStatus = CacheStatus.Hanging;
-                this.drop.push(atlas);
+                return;
             }
 
+            const ind = list.indexOf(atlas);
+            if (ind < 0) {
+                throw new Error('removed atlas not found in the list');
+            }
+            list.splice(ind, 1);
+            atlas.mem.cacheStatus = CacheStatus.Hanging;
+            this.drop.push(atlas);
             atlas.storage.unbind();
             pool.push(atlas.storage);
         }

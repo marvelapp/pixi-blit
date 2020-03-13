@@ -11,6 +11,11 @@ namespace pixi_blit {
         detectedConflationMode = CANVAS_CONFLATION_MODE.NO;
         mixedContent = false;
 
+        get source()
+        {
+            return this.storage.canvas;
+        }
+
         detectConflation() {
             const {atlas} = this.storage;
             const {addedElements} = atlas;
@@ -79,6 +84,8 @@ namespace pixi_blit {
             const h = canvas.height;
 
             const dirtyId = glTex.dirtyId;
+
+            gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
 
             if (dirtyId < 0) {
                 glTex.width = w;

@@ -66,6 +66,11 @@ namespace pixi_blit {
 
             copies.length = 0;
         }
+
+        dispose()
+        {
+            this.rt.baseTexture.dispose();
+        }
     }
 
     export class BlitterStorage extends AtlasCollectionStorage {

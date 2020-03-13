@@ -7,6 +7,8 @@ const shapeCache = new PIXI.blit.ShapeCache(app.renderer, app.stage, {});
 shapeCache.defaultCacheType = PIXI.blit.CacheType.WebGL;
 let lastGC = performance.now();
 
+shapeCache.gcExpire = 1;
+
 app.ticker.add(() => {
     if (performance.now() > lastGC + 200) {
         lastGC = performance.now();

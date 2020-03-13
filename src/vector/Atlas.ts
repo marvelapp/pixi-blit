@@ -24,6 +24,8 @@ namespace pixi_blit {
         unbind() {
             this.atlas = null;
         }
+
+        abstract dispose(): void;
     }
 
     export class Atlas {
@@ -38,6 +40,7 @@ namespace pixi_blit {
         mem = new MemoryComponent();
 
         uniqId: number;
+
         constructor(public readonly storage: AbstractAtlasStorage) {
             this.uniqId = generateUid();
             this.root = this.createAtlasRoot();
@@ -70,7 +73,7 @@ namespace pixi_blit {
 
             this.mem.cacheStatus = CacheStatus.Disposed;
             (this as any).storage = null;
-            for (let i=0;i<addedElements.length;i++) {
+            for (let i = 0; i < addedElements.length; i++) {
                 const elem = addedElements[i];
                 if (elem.mem.cacheStatus === CacheStatus.Hanging) {
                     elem.destroy();
@@ -167,8 +170,7 @@ namespace pixi_blit {
                 new PIXI.Rectangle(atlasNode.rect.left + pad,
                     atlasNode.rect.top + pad, elem.width, elem.height));
 
-            if (prevAtlas)
-            {
+            if (prevAtlas) {
                 if (elem.oldAtlasSprite) {
                     // moved two times? CURSED! drop it!
                     elem.oldAtlasSprite = null;

@@ -50,6 +50,11 @@ namespace pixi_blit {
 
             // position the raster or graphics
             if (activeRaster) {
+                if (activeRaster.mem.cacheStatus > CacheStatus.Drawn)
+                {
+                    throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
+                }
+
                 if (!this.activeSprite) {
                     this.activeSprite = new PIXI.Sprite();
                 }
