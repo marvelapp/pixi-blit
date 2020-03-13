@@ -221,6 +221,10 @@ namespace pixi_blit {
                 }
             }
 
+            if (N == 0) {
+                return;
+            }
+
             for (let j = 0; j < N; j++) {
                 for (let i = 0; i < list[j].addedElements.length; i++) {
                     const elem = list[j].addedElements[i];
