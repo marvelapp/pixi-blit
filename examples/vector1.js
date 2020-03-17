@@ -18,12 +18,23 @@ app.ticker.add(() => {
     shapeCache.frameTick();
 }, PIXI.UPDATE_PRIORITY.LOW + 1);
 
-const circleModel = new PIXI.blit.VectorModel();
-const circle = circleModel.graphics;
+class MyCircleGenerator {
+    generate(model) {
+        const {graphics, params} = model;
 
-circle.beginFill(0xDE3249);
-circle.drawCircle(0, 0, 100);
-circle.endFill();
+        graphics.beginFill(params.color || 0xFFFFFF);
+        graphics.drawCircle(0, 0, params.color || 10);
+        graphics.endFill();
+    }
+}
+
+const circleModel = new PIXI.blit.VectorModel({
+    params: {
+        radius: 100,
+        color: 0xDE3249,
+    },
+    generator: new MyCircleGenerator()
+});
 
 const inst1 = new PIXI.blit.VectorSprite(circleModel);
 const inst2 = new PIXI.blit.VectorSprite(circleModel);

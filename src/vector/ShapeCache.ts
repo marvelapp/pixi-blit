@@ -101,6 +101,8 @@ namespace pixi_blit {
         protected visitFrame = (elem: VectorSprite): void => {
             const {model} = elem;
 
+            model.prepare();
+
             const {graphics} = model;
 
             this.activeElements.push(elem);
