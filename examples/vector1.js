@@ -23,7 +23,7 @@ class MyCircleGenerator {
         const {graphics, params} = model;
 
         graphics.beginFill(params.color || 0xFFFFFF);
-        graphics.drawCircle(0, 0, params.color || 10);
+        graphics.drawCircle(0, 0, params.radius || 10);
         graphics.endFill();
     }
 }
