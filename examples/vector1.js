@@ -4,7 +4,7 @@ const app = new PIXI.Application({antialias: false/*, autoStart: false*/});
 document.body.appendChild(app.view);
 
 const shapeCache = new PIXI.blit.ShapeCache(app.renderer, app.stage, {});
-shapeCache.defaultCacheType = PIXI.blit.CacheType.WebGL;
+shapeCache.defaultCacheType = PIXI.blit.CacheType.Canvas2d;
 let lastGC = performance.now();
 
 shapeCache.gcExpire = 1;
@@ -22,14 +22,16 @@ class MyCircleCanvas extends PIXI.blit.GeneratedCanvasGraphics {
     renderCanvas(renderer) {
         const context = renderer.context;
 
-        const radius = this.params.radius;
-        const color = this.params.color;
+        const params = this.model.params;
 
-        renderer.setContextTransform(this.transform);
+        const radius = params.radius;
+        const color = params.color;
+
+        renderer.setContextTransform(this.transform.worldTransform);
 
         context.fillStyle = `#${color.toString(16)}`;
         context.beginPath();
-        context.ellipse(-radius, -radius, radius, radius);
+        context.ellipse(0, 0, radius, radius, 0, 0, Math.PI*2);
         context.fill();
     }
 }
