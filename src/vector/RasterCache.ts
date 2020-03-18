@@ -1,4 +1,17 @@
 namespace pixi_blit {
+    export abstract class GeneratedCanvasGraphics extends PIXI.Container {
+        constructor(public model: VectorModel) {
+            super();
+        }
+
+        _calculateBounds() {
+            this._bounds.clear();
+            this._bounds.addBounds(this.model._genBounds);
+        }
+
+        abstract renderCanvas(renderer: PIXI.CanvasRenderer): void;
+    }
+
     export class RasterCache implements IGCEntry {
         outerBounds: PIXI.Rectangle = null;
         instance: VectorSprite;
@@ -6,7 +19,7 @@ namespace pixi_blit {
         mem = new MemoryComponent();
         type = CacheType.Auto;
         // atlas modifies those objects
-        graphicsNode: PIXI.Graphics = null;
+        graphicsNode: PIXI.Graphics | GeneratedCanvasGraphics = null;
         texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
 
         // atlas sets those values
@@ -15,15 +28,33 @@ namespace pixi_blit {
         baseTexDirtyId: number = 0;
         atlasCanvasAntiConflation = false;
 
+        createdMat: PIXI.Matrix;
         newAtlas: Atlas = null;
         newAtlasNode: AtlasNode<RasterCache> = null;
         oldAtlasSprite: PIXI.Sprite = null;
 
         uniqId: number;
+
         constructor(public model: VectorModel, mat: PIXI.Matrix) {
             this.uniqId = generateUid();
-            this.graphicsNode = new PIXI.Graphics(model.graphics.geometry);
-            this.graphicsNode.transform.setFromMatrix(mat);
+            this.createdMat = mat.clone();
+        }
+
+        // should be called once type of raster is determined;
+        prepare() {
+            const {model} = this;
+            const {vectorMode, generator} = model;
+
+            if (this.type === CacheType.Canvas2d
+                && vectorMode === VECTOR_MODE.GENERATED
+                && generator.generateCanvas) {
+                this.graphicsNode = generator.generateCanvas(model);
+            } else {
+                // pixi graphics mode
+                model.prepareVector();
+                this.graphicsNode = new PIXI.Graphics(model.graphics.geometry);
+            }
+            this.graphicsNode.transform.setFromMatrix(this.createdMat);
             this.outerBounds = this.graphicsNode.getBounds();
         }
 

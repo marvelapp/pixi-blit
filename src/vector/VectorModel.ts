@@ -15,7 +15,11 @@ namespace pixi_blit {
     }
 
     export interface IVectorGenerator {
-         generate(model: VectorModel): void;
+        generate(model: VectorModel): void;
+
+        generateBounds?(model: VectorModel): void;
+
+        generateCanvas?(model: VectorModel): GeneratedCanvasGraphics;
     }
 
     export interface IVectorModelOptions {
@@ -55,7 +59,7 @@ namespace pixi_blit {
         instanceCache: { [uniqId: number]: RasterCache } = {};
 
         copyBounds(mat: PIXI.Matrix, out: PIXI.Bounds) {
-            const {minX, minY, maxX, maxY} = this.graphics.geometry.bounds;
+            const {minX, minY, maxX, maxY} = this._genBounds || this._graphics.geometry.bounds;
 
             out.clear();
             out.addFrameMatrix(mat, minX, maxX, minY, maxY);
@@ -63,6 +67,7 @@ namespace pixi_blit {
 
         _generator: IVectorGenerator = null;
         _graphics: PIXI.Graphics = null;
+        _genBounds: PIXI.Bounds = null;
 
         set generator(value: IVectorGenerator) {
             this._generator = value;
@@ -83,7 +88,7 @@ namespace pixi_blit {
             return this._graphics;
         }
 
-        prepare() {
+        prepareVector() {
             if (this.vectorMode === VECTOR_MODE.INVALID) {
                 throw new Error('cant prepare empty VectorModel');
             }
@@ -95,6 +100,61 @@ namespace pixi_blit {
                     (this._graphics as any).finishPoly();
                 }
             }
+        }
+
+        prepareBounds() {
+            // for pixi its the same as prepareVector
+            const {vectorMode, _generator} = this;
+
+            if (vectorMode === VECTOR_MODE.GENERATED
+                && (_generator.generateCanvas || _generator.generateBounds)) {
+                this._genBounds = new PIXI.Bounds();
+                _generator.generateBounds(this);
+                return;
+            }
+            this.prepareVector();
+        }
+
+        dispose(disposeRaster = false) {
+            if (this.vectorMode !== VECTOR_MODE.GENERATED) {
+                return;
+            }
+
+            if (!this._graphics) {
+                return;
+            }
+
+            this._graphics.geometry.destroy();
+            this._graphics.destroy();
+            this._graphics = null;
+
+            if (disposeRaster) {
+                for (let i = 0; i < this.mipCache.length; i++) {
+                    const elem = this.mipCache[i];
+
+                    if (elem) {
+                        if (elem.mem.cacheStatus === CacheStatus.Drawn) {
+                            elem.mem.cacheStatus = CacheStatus.Hanging;
+                        }
+                    }
+                }
+            }
+        }
+
+        renderCanvas() {
+
+        }
+
+        isDisposable() {
+            if (this.vectorMode !== VECTOR_MODE.GENERATED
+                || !this._graphics) {
+                return false;
+            }
+
+            const len = (this._graphics.geometry as any).points.length;
+
+            // return len >= 100;
+            return len > 0;
         }
 
         preferredCache = CacheType.Auto;

@@ -18,6 +18,22 @@ app.ticker.add(() => {
     shapeCache.frameTick();
 }, PIXI.UPDATE_PRIORITY.LOW + 1);
 
+class MyCircleCanvas extends PIXI.blit.GeneratedCanvasGraphics {
+    renderCanvas(renderer) {
+        const context = renderer.context;
+
+        const radius = this.params.radius;
+        const color = this.params.color;
+
+        renderer.setContextTransform(this.transform);
+
+        context.fillStyle = `#${color.toString(16)}`;
+        context.beginPath();
+        context.ellipse(-radius, -radius, radius, radius);
+        context.fill();
+    }
+}
+
 class MyCircleGenerator {
     generate(model) {
         const {graphics, params} = model;
@@ -25,6 +41,20 @@ class MyCircleGenerator {
         graphics.beginFill(params.color || 0xFFFFFF);
         graphics.drawCircle(0, 0, params.radius || 10);
         graphics.endFill();
+    }
+
+    generateBounds(model) {
+        const {params, _genBounds} = model;
+
+        const radius = params.radius = params.radius || 10;
+        params.color = params.color || 0xFFFFFF;
+
+        _genBounds.addFramePad(0, 0, 0, 0,
+            radius, radius);
+    }
+
+    generateCanvas(model) {
+        return new MyCircleCanvas(model);
     }
 }
 

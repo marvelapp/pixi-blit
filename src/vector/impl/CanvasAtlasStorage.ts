@@ -63,14 +63,12 @@ namespace pixi_blit {
             }
         };
 
-        dispose()
-        {
+        dispose() {
             this.baseTexture.dispose();
 
             const bt = (this.canvasRt as any).baseTexture;
 
-            if (bt._canvasRenderTarget)
-            {
+            if (bt._canvasRenderTarget) {
                 // free canvas
                 bt._canvasRenderTarget.canvas.width = 0;
                 bt._canvasRenderTarget.canvas.height = 0;

@@ -3,6 +3,7 @@ namespace pixi_blit {
     const tempBounds = new PIXI.Bounds();
     const tempMat = new PIXI.Matrix();
     const tempRasters: Array<RasterCache> = [];
+    const tempModels: Array<VectorModel> = [];
 
     export class ShapeCache {
         constructor(public renderer: PIXI.Renderer,
@@ -101,13 +102,17 @@ namespace pixi_blit {
         protected visitFrame = (elem: VectorSprite): void => {
             const {model} = elem;
 
-            model.prepare();
+            if (!this.models[model.uniqId]) {
+                this.models[model.uniqId] = model;
+            }
+
+            model.prepareBounds();
 
             const {graphics} = model;
 
             this.activeElements.push(elem);
 
-            if (this.isEmpty(graphics)) {
+            if (graphics && this.isEmpty(graphics)) {
                 elem.disable();
                 return;
             }
@@ -122,6 +127,7 @@ namespace pixi_blit {
                     if (mip.type === CacheType.Auto) {
                         mip.type = this.defaultCacheType;
                     }
+                    mip.prepare();
                     //TODO: call for vectorization if WebGL
                     this.atlases[mip.type].addToQueue(mip);
                 }
@@ -131,7 +137,7 @@ namespace pixi_blit {
                 mip.mem.touchFrame(this.frameNum);
                 // elem check raster according to its position
             } else {
-                //TODO: call for vectorization
+                model.prepareVector();
                 elem.enableGraphics(model.graphics.geometry);
             }
         };
@@ -161,7 +167,6 @@ namespace pixi_blit {
                 || elemBounds.maxY - elemBounds.minY > this.maxBoundsForMips) {
                 return null;
             }
-
             const matrixScale = Math.max(mat.a, mat.d);
             let mipLevel = Math.ceil(Math.log(matrixScale) / Math.LN2 - (1e-2));
             // clamp
@@ -222,10 +227,29 @@ namespace pixi_blit {
                 mem.touchGc(this.gcNum, this.lastGcFrameNum);
             }
 
+            for (let key in this.models) {
+                const model = this.models[key];
+                const {mem} = model;
+
+                if (!model.isDisposable()) {
+                    continue;
+                }
+                mem.touchGc(this.gcNum, this.lastGcFrameNum);
+                if (mem.cacheStatus === CacheStatus.Hanging) {
+                    // something was disposed in prev tick
+                    model.dispose();
+                }
+                tempModels.push(model);
+            }
+
             for (let i = 0; i < tempRasters.length; i++) {
                 delete this.rasters[tempRasters[i].uniqId];
             }
             tempRasters.length = 0;
+            for (let i = 0; i < tempRasters.length; i++) {
+                delete this.models[tempModels[i].uniqId];
+            }
+            tempModels.length = 0;
 
             this.lastGcFrameNum = this.frameNum;
             this.runners.gcTick.emit();
