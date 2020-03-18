@@ -6,7 +6,7 @@ namespace pixi_blit {
 
         _calculateBounds() {
             this._bounds.clear();
-            this._bounds.addBounds(this.model._genBounds);
+            this._bounds.addBoundsMatrix(this.model._genBounds, this.transform.worldTransform);
         }
 
         abstract renderCanvas(renderer: PIXI.CanvasRenderer): void;
