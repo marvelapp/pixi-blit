@@ -151,9 +151,12 @@ namespace pixi_blit {
 
             //TODO: cache transform details
 
+            let extraScaleX = elem.spriteGenerator ? Math.abs(elem.spriteGenerator.scaleX) : 1.0;
+            let extraScaleY = elem.spriteGenerator ? Math.abs(elem.spriteGenerator.scaleY) : 1.0;
+
             //use this thing as mat if we use precise?
-            mat.a = Math.sqrt(mat.a * mat.a + mat.b * mat.b);
-            mat.d = Math.sqrt(mat.c * mat.c + mat.d * mat.d);
+            mat.a = Math.sqrt(mat.a * mat.a + mat.b * mat.b) / extraScaleX;
+            mat.d = Math.sqrt(mat.c * mat.c + mat.d * mat.d) / extraScaleY;
             mat.b = 0;
             mat.c = 0;
             mat.tx -= Math.round(mat.tx);

@@ -1,6 +1,17 @@
 namespace pixi_blit {
     const tempMat = new PIXI.Matrix();
 
+    export interface ISprite extends PIXI.Container {
+        texture: PIXI.Texture;
+    }
+
+    export interface ISpriteGenerator {
+        readonly scaleX: number;
+        readonly scaleY: number;
+
+        generateSprite(): ISprite;
+    }
+
     export class VectorSprite extends PIXI.Container {
         constructor(public model: VectorModel) {
             super();
@@ -9,7 +20,9 @@ namespace pixi_blit {
         activeCacheType = CacheType.No_Cache;
         activeRaster: RasterCache = null;
         activeGraphics: PIXI.Graphics = null;
-        activeSprite: PIXI.Sprite = null;
+        activeSprite: ISprite = null;
+
+        spriteGenerator: ISpriteGenerator = null;
 
         enableRaster(raster: RasterCache) {
             this.activeRaster = raster;
@@ -50,13 +63,16 @@ namespace pixi_blit {
 
             // position the raster or graphics
             if (activeRaster) {
-                if (activeRaster.mem.cacheStatus > CacheStatus.Drawn)
-                {
+                if (activeRaster.mem.cacheStatus > CacheStatus.Drawn) {
                     throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
                 }
 
                 if (!this.activeSprite) {
-                    this.activeSprite = new PIXI.Sprite();
+                    if (this.spriteGenerator) {
+                        this.activeSprite = this.spriteGenerator.generateSprite();
+                    } else {
+                        this.activeSprite = new PIXI.Sprite();
+                    }
                 }
                 this.activeSprite.texture = activeRaster.texture;
                 tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
