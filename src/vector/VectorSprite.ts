@@ -17,6 +17,8 @@ namespace pixi_blit {
             super();
         }
 
+        preferredCache: CacheType = CacheType.Auto;
+
         activeCacheType = CacheType.No_Cache;
         activeRaster: RasterCache = null;
         activeGraphics: PIXI.Graphics = null;

@@ -119,27 +119,31 @@ namespace pixi_blit {
 
             model.mem.touchFrame(this.frameNum);
 
-            //TODO: runtime instanced instead of mips
-            const mip = this.mipBehaviour(elem);
+            const cacheType = elem.preferredCache !== CacheType.Auto ? elem.preferredCache
+                : model.preferredCache !== CacheType.Auto ? model.preferredCache : this.defaultCacheType;
 
-            if (mip) {
-                if (mip.mem.cacheStatus === CacheStatus.Init) {
-                    if (mip.type === CacheType.Auto) {
-                        mip.type = this.defaultCacheType;
+            if (cacheType === CacheType.WebGL
+                || cacheType === CacheType.Canvas2d) {
+                const mip = this.mipBehaviour(elem);
+
+                if (mip) {
+                    if (mip.mem.cacheStatus === CacheStatus.Init) {
+                        mip.type = cacheType;
+                        mip.prepare();
+                        this.atlases[mip.type].addToQueue(mip);
                     }
-                    mip.prepare();
-                    //TODO: call for vectorization if WebGL
-                    this.atlases[mip.type].addToQueue(mip);
-                }
-                elem.enableRaster(mip);
+                    elem.enableRaster(mip);
 
-                //TODO: touch has to be called for static elements in case they didnt appear in visitFrame
-                mip.mem.touchFrame(this.frameNum);
-                // elem check raster according to its position
-            } else {
-                model.prepareVector();
-                elem.enableGraphics(model.graphics.geometry);
+                    //TODO: touch has to be called for static elements in case they didnt appear in visitFrame
+                    mip.mem.touchFrame(this.frameNum);
+                    return;
+                    // elem check raster according to its position
+                }
             }
+
+            //TODO: add RuntimeWebGL support here
+            model.prepareVector();
+            elem.enableGraphics(model.graphics.geometry);
         };
 
         mipBehaviour(elem: VectorSprite): RasterCache {

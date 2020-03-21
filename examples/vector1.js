@@ -31,7 +31,7 @@ class MyCircleCanvas extends PIXI.blit.GeneratedCanvasGraphics {
 
         context.fillStyle = `#${color.toString(16)}`;
         context.beginPath();
-        context.ellipse(0, 0, radius, radius, 0, 0, Math.PI*2);
+        context.ellipse(0, 0, radius, radius, 0, 0, Math.PI * 2);
         context.fill();
     }
 }
@@ -71,6 +71,8 @@ const circleModel = new PIXI.blit.VectorModel({
 const inst1 = new PIXI.blit.VectorSprite(circleModel);
 const inst2 = new PIXI.blit.VectorSprite(circleModel);
 const inst3 = new PIXI.blit.VectorSprite(circleModel);
+
+inst1.preferredCache = PIXI.blit.CacheType.No_Cache;
 
 app.stage.addChild(inst1, inst2, inst3);
 

@@ -44,7 +44,6 @@ namespace pixi_blit {
             this.params = options.params || {};
         }
 
-
         params: { [key: string]: any };
 
         uniqId: number;
