@@ -52,6 +52,8 @@ namespace pixi_blit {
         // works with canvas2d
         conflationMode = CANVAS_CONFLATION_MODE.AUTO;
         vectorMode = VECTOR_MODE.PROVIDED;
+        dirtyBounds = false;
+        dirtyGraphics = false;
 
         mipCache: Array<RasterCache> = [];
         instances: { [uniqId: number]: VectorSprite } = {};
@@ -93,7 +95,8 @@ namespace pixi_blit {
             }
 
             if (this.vectorMode === VECTOR_MODE.GENERATED) {
-                if (!this._graphics) {
+                if (!this._graphics || this.dirtyGraphics) {
+                    this.dirtyGraphics = false;
                     this._graphics = new PIXI.Graphics();
                     this.generator.generate(this);
                     (this._graphics as any).finishPoly();
@@ -107,37 +110,48 @@ namespace pixi_blit {
 
             if (vectorMode === VECTOR_MODE.GENERATED
                 && (_generator.generateCanvas || _generator.generateBounds)) {
-                this._genBounds = new PIXI.Bounds();
-                _generator.generateBounds(this);
+                if (!this._genBounds || this.dirtyBounds) {
+                    this.dirtyBounds = false;
+                    this._genBounds = new PIXI.Bounds();
+                    _generator.generateBounds(this);
+                }
                 return;
             }
             this.prepareVector();
         }
 
         dispose(disposeRaster = false) {
-            if (this.vectorMode !== VECTOR_MODE.GENERATED) {
-                return;
-            }
-
             if (!this._graphics) {
                 return;
             }
-
-            this._graphics.geometry.destroy();
-            this._graphics.destroy();
-            this._graphics = null;
+            if (this.vectorMode === VECTOR_MODE.GENERATED) {
+                this._graphics.geometry.destroy();
+                this._graphics.destroy();
+                this._graphics = null;
+            }
 
             if (disposeRaster) {
-                for (let i = 0; i < this.mipCache.length; i++) {
-                    const elem = this.mipCache[i];
+                this.disposeRaster();
+            }
+        }
 
-                    if (elem) {
-                        if (elem.mem.cacheStatus === CacheStatus.Drawn) {
-                            elem.mem.cacheStatus = CacheStatus.Hanging;
-                        }
+        disposeRaster() {
+            for (let i = 0; i < this.mipCache.length; i++) {
+                const elem = this.mipCache[i];
+
+                if (elem) {
+                    this.mipCache[i] = null;
+                    if (elem.mem.cacheStatus === CacheStatus.Drawn) {
+                        elem.mem.cacheStatus = CacheStatus.Hanging;
                     }
                 }
             }
+        }
+
+        reset() {
+            this.dirtyBounds = true;
+            this.dirtyGraphics = true;
+            this.disposeRaster();
         }
 
         renderCanvas() {

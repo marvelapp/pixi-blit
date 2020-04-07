@@ -96,11 +96,13 @@ namespace pixi_blit {
             renderer.texture.bind(storage.baseTex, 0);
         }
 
-        createStorageBySize(size: PIXI.ISize) {
-            return new CanvasAtlasStorage({
+        createStorageBySize(size: core.ISize) {
+            const atlas = new CanvasAtlasStorage({
                 width: size.width,
                 height: size.height
             });
+            atlas.resource.defaultConflationMode = this.options.canvasAntiConflation ? CANVAS_CONFLATION_MODE.YES : CANVAS_CONFLATION_MODE.NO;
+            return atlas;
         }
     }
 }

@@ -233,6 +233,7 @@ namespace pixi_blit {
 
                 mem.touchGc(this.gcNum, this.lastGcFrameNum);
             }
+            this.frameNum++; // just in case something will happen before frameTick()
 
             for (let key in this.models) {
                 const model = this.models[key];

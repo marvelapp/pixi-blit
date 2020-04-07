@@ -33,7 +33,7 @@ namespace pixi_blit {
 
         enableGraphics(geom: PIXI.GraphicsGeometry) {
             this.activeCacheType = CacheType.No_Cache;
-            if (this.activeGraphics && this.activeGraphics.geometry) {
+            if (this.activeGraphics && this.activeGraphics.geometry === geom) {
                 return;
             }
             this.activeRaster = null;

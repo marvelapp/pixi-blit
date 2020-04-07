@@ -286,7 +286,7 @@ namespace pixi_blit {
     export abstract class AtlasCollectionStorage {
         constructor(public readonly type: CacheType, public options: IMultiAtlasOptions) {
             // default setting
-            (Object as any).assign(options, {
+            this.options = (Object as any).assign({
                 dim1MaxSize: 512,
                 dim2MinSize: 256,
                 dim2MaxSize: 256,
@@ -297,7 +297,7 @@ namespace pixi_blit {
                 atlasSize: 1024,
                 atlasDivStep: 128,
                 mergeThreshold: 0.8
-            });
+            }, options);
         }
 
         collection: AtlasCollection = null;
