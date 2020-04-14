@@ -103,6 +103,7 @@ namespace pixi_blit {
 
             if (storage.copies.length > 0) {
                 renderer.renderTexture.bind(storage.rt);
+                renderer.batch.flush();
                 storage.renderCopies(renderer);
                 renderer.batch.flush();
             }
