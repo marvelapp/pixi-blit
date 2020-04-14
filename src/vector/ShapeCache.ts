@@ -104,6 +104,7 @@ namespace pixi_blit {
 
             if (!this.models[model.uniqId]) {
                 this.models[model.uniqId] = model;
+                model.mem.expire = this.gcExpire;
             }
 
             model.prepareBounds();

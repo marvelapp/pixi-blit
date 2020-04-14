@@ -95,6 +95,7 @@ namespace pixi_blit {
             }
 
             if (this.vectorMode === VECTOR_MODE.GENERATED) {
+                this.mem.cacheStatus = CacheStatus.Drawn;
                 if (!this._graphics || this.dirtyGraphics) {
                     this.dirtyGraphics = false;
                     this._graphics = new PIXI.Graphics();
