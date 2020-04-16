@@ -1,6 +1,8 @@
 ///<reference path="../AtlasCollection.ts"/>
 namespace pixi_blit {
     export class CanvasAtlasStorage extends AbstractAtlasStorage {
+        static CanvasHTMLContainer: HTMLElement = null;
+
         canvasRt: PIXI.RenderTexture = null;
         baseTex: PIXI.BaseTexture = null;
         resource: CanvasAtlasResource = null;
@@ -29,12 +31,17 @@ namespace pixi_blit {
         }
 
         renderOnlyModified = true;
-
+        addedToHtml = false;
         /**
          * called from blitterCache
          * @param renderer
          */
         renderCanvas = (renderer: PIXI.CanvasRenderer) => {
+            if (!this.addedToHtml && CanvasAtlasStorage.CanvasHTMLContainer) {
+                this.addedToHtml = true;
+                CanvasAtlasStorage.CanvasHTMLContainer.appendChild(this.canvas);
+            }
+
             const {atlas, renderOnlyModified, baseTex} = this;
             const {addedElements} = atlas;
             // render only new elements
@@ -64,6 +71,10 @@ namespace pixi_blit {
         };
 
         dispose() {
+            if (this.addedToHtml) {
+                CanvasAtlasStorage.CanvasHTMLContainer.removeChild(this.canvas);
+            }
+
             this.baseTexture.dispose();
 
             const bt = (this.canvasRt as any).baseTexture;
