@@ -96,7 +96,7 @@ namespace pixi_blit {
             renderer.texture.bind(storage.baseTex, 0);
         }
 
-        createStorageBySize(size: core.ISize) {
+        createStorageBySize(size: PIXI.ISize) {
             const atlas = new CanvasAtlasStorage({
                 width: size.width,
                 height: size.height
