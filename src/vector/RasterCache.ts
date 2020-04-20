@@ -22,6 +22,8 @@ namespace pixi_blit {
         graphicsNode: PIXI.Graphics | GeneratedCanvasGraphics = null;
         texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
 
+        addingToCollection: AtlasCollection = null;
+
         // atlas sets those values
         atlas: Atlas = null;
         atlasNode: AtlasNode<RasterCache> = null;

@@ -33,18 +33,20 @@ namespace pixi_blit {
         pool: Array<AbstractAtlasStorage> = [];
 
         frameRasterQueue: Array<RasterCache> = [];
-        frameRasterMap: { [key: number]: RasterCache } = {};
-
-        gcEntries: { [key: number]: IGCEntry } = {};
-
+        // @popelyshev: no way to maintain it for now
+        // gcEntries: { [key: number]: IGCEntry } = {};
         addToQueue(raster: RasterCache) {
-            if (this.frameRasterMap[raster.uniqId]) {
+            if (raster.addingToCollection) {
+                if (raster.addingToCollection !== this) {
+                    throw new Error('Trying to add raster to second collection');
+                }
                 return;
             }
+            raster.addingToCollection = this;
             this.frameRasterQueue.push(raster);
-            this.frameRasterMap[raster.uniqId] = raster;
-            this.gcEntries[raster.uniqId] = raster;
+            // this.gcEntries[raster.uniqId] = raster;
         }
+
 
         elemSortMethod = (a: RasterCache, b: RasterCache) => {
             if (b.width == a.width) {
@@ -100,7 +102,6 @@ namespace pixi_blit {
                     lightQueue.push(elem);
                 }
             }
-            queue.length = 0;
 
             if (lightQueue.length === 0) {
                 return;
@@ -175,7 +176,7 @@ namespace pixi_blit {
         };
 
         removeAtlas(atlas: Atlas) {
-            const {list, pool, frameRasterMap} = this;
+            const {list, pool} = this;
 
             if (atlas.isSingle) {
                 //single!

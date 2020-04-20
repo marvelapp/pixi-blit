@@ -61,8 +61,12 @@ namespace pixi_blit {
             tryRepack: new PIXI.Runner('tryRepack'),
         };
 
-        atlases: { [key in CacheType]: AtlasCollection } = [null, null, null, null, null] as any;
+        // those two only for PixiJS simple tree
+        fillActiveElements = false;
         activeElements: Array<VectorSprite> = [];
+        // == end of pixijs
+
+        atlases: { [key in CacheType]: AtlasCollection } = [null, null, null, null, null] as any;
         frameNum = 0;
         lastGcFrameNum = 0;
         gcNum = 0;
@@ -77,6 +81,7 @@ namespace pixi_blit {
             const {activeElements, runners} = this;
 
             this.frameNum++;
+            this.fillActiveElements = true;
             activeElements.length = 0;
             this.recFind(this.root, this.visitFrame);
             runners.processQueue.emit();
@@ -91,6 +96,7 @@ namespace pixi_blit {
             for (let i = 0; i < activeElements.length; i++) {
                 activeElements[i].prerender();
             }
+            this.fillActiveElements = false;
         }
 
         //TODO: move method to graphics class
