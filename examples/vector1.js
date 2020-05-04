@@ -87,5 +87,23 @@ app.ticker.add((delta) => {
     inst3.scale.set(Math.exp(Math.sin(-phase)));
 });
 
+//Interaction
+
+const filter = new PIXI.filters.AlphaFilter(0.8);
+
+function onHover(event) {
+    this.filters = [filter];
+}
+
+function onLeave(event) {
+    this.filters = [];
+}
+
+[inst1, inst2, inst3].forEach((elem) => {
+    elem.interactive = true;
+    elem.on('mouseover', onHover);
+    elem.on('mouseout', onLeave);
+});
+
 // shapeCache.frameTick();
 // app.render();

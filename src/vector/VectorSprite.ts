@@ -3,6 +3,9 @@ namespace pixi_blit {
 
     export interface ISprite extends PIXI.Container {
         texture: PIXI.Texture;
+        tint?: number;
+
+        containsPoint?(point: PIXI.IPoint): boolean;
     }
 
     export interface ISpriteGenerator {
@@ -17,16 +20,22 @@ namespace pixi_blit {
             super();
         }
 
+        tint = 0xFFFFFF;
+
         preferredCache: CacheType = CacheType.Auto;
 
         activeCacheType = CacheType.No_Cache;
         activeRaster: RasterCache = null;
         activeGraphics: PIXI.Graphics = null;
         activeSprite: ISprite = null;
+        rasterDirty = true;
 
         spriteGenerator: ISpriteGenerator = null;
 
         enableRaster(raster: RasterCache) {
+            if (this.activeRaster !== raster) {
+                this.rasterDirty = true;
+            }
             this.activeRaster = raster;
             this.activeCacheType = raster.type;
         }
@@ -52,16 +61,18 @@ namespace pixi_blit {
             super.updateTransform();
             if (this.activeSprite) {
                 this.activeSprite.transform.updateTransform(this.transform);
+                this.activeSprite.tint = this.tint;
                 (this.activeSprite as any).worldAlpha = this.worldAlpha;
             }
             if (this.activeGraphics) {
                 this.activeGraphics.transform.updateTransform(this.transform);
+                this.activeGraphics.tint = this.tint;
                 (this.activeGraphics as any).worldAlpha = this.worldAlpha;
             }
         }
 
         prerender() {
-            const {activeRaster, activeGraphics} = this;
+            const {activeRaster} = this;
 
             // position the raster or graphics
             if (activeRaster) {
@@ -69,19 +80,45 @@ namespace pixi_blit {
                     throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
                 }
 
-                if (!this.activeSprite) {
-                    if (this.spriteGenerator) {
-                        this.activeSprite = this.spriteGenerator.generateSprite();
-                    } else {
-                        this.activeSprite = new PIXI.Sprite();
+                if (this.rasterDirty) {
+                    if (!this.activeSprite) {
+                        if (this.spriteGenerator) {
+                            this.activeSprite = this.spriteGenerator.generateSprite();
+                        } else {
+                            this.activeSprite = new PIXI.Sprite();
+                        }
                     }
+                    this.rasterDirty = false;
+
+                    this.activeSprite.texture = activeRaster.texture;
+                    tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
+                    tempMat.tx = -activeRaster.outerBounds.x;
+                    tempMat.ty = -activeRaster.outerBounds.y;
+                    tempMat.invert();
+                    this.activeSprite.transform.setFromMatrix(tempMat);
                 }
-                this.activeSprite.texture = activeRaster.texture;
-                tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
-                tempMat.tx = -activeRaster.outerBounds.x;
-                tempMat.ty = -activeRaster.outerBounds.y;
-                tempMat.invert();
-                this.activeSprite.transform.setFromMatrix(tempMat);
+            }
+        }
+
+        containsPoint(point: PIXI.IPoint) {
+            const {activeSprite, activeGraphics} = this;
+            //for now its just sprite copy
+            if (activeSprite && activeSprite.containsPoint) {
+                return activeSprite.containsPoint(point);
+            } else if (activeGraphics) {
+                return activeGraphics.containsPoint(point as PIXI.Point);
+            }
+            return false;
+        }
+
+        calculateBounds() {
+            const {_bounds, activeSprite, activeGraphics} = this;
+            if (activeSprite) {
+                activeSprite._bounds = this._bounds;
+                activeSprite.calculateBounds();
+            } else if (activeGraphics) {
+                activeGraphics._bounds = this._bounds;
+                activeGraphics.calculateBounds();
             }
         }
 

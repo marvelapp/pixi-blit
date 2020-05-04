@@ -102,6 +102,7 @@ namespace pixi_blit {
                     lightQueue.push(elem);
                 }
             }
+            queue.length = 0;
 
             if (lightQueue.length === 0) {
                 return;
