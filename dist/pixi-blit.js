@@ -316,26 +316,6 @@ var pixi_blit;
 })(pixi_blit || (pixi_blit = {}));
 var pixi_blit;
 (function (pixi_blit) {
-    var oldFunc = PIXI.Container.prototype.render;
-    Object.assign(PIXI.Container.prototype, {
-        render: function (renderer) {
-            if (this._blitCacheData && this._blitCacheData.tryRender(renderer)) {
-                return;
-            }
-            oldFunc.call(this, renderer);
-        },
-        containerRenderWebGL: oldFunc
-    });
-})(pixi_blit || (pixi_blit = {}));
-var pixi_blit;
-(function (pixi_blit) {
-    Object.assign(PIXI.DisplayObject.prototype, {
-        aaMode: 0,
-        blitComponent: null,
-    });
-})(pixi_blit || (pixi_blit = {}));
-var pixi_blit;
-(function (pixi_blit) {
     var tempState = {
         sourceFrame: new PIXI.Rectangle(),
         destinationFrame: new PIXI.Rectangle(),
@@ -555,8 +535,6 @@ var pixi_blit;
             this.drop = [];
             this.pool = [];
             this.frameRasterQueue = [];
-            this.frameRasterMap = {};
-            this.gcEntries = {};
             this.elemSortMethod = function (a, b) {
                 if (b.width == a.width) {
                     return b.height - a.height;
@@ -585,12 +563,14 @@ var pixi_blit;
             };
         }
         AtlasCollection.prototype.addToQueue = function (raster) {
-            if (this.frameRasterMap[raster.uniqId]) {
+            if (raster.addingToCollection) {
+                if (raster.addingToCollection !== this) {
+                    throw new Error('Trying to add raster to second collection');
+                }
                 return;
             }
+            raster.addingToCollection = this;
             this.frameRasterQueue.push(raster);
-            this.frameRasterMap[raster.uniqId] = raster;
-            this.gcEntries[raster.uniqId] = raster;
         };
         AtlasCollection.prototype.cacheSingleElem = function (elem) {
             var _a = this, storage = _a.storage, singles = _a.singles, newSingles = _a.newSingles;
@@ -664,7 +644,7 @@ var pixi_blit;
             }
         };
         AtlasCollection.prototype.removeAtlas = function (atlas) {
-            var _a = this, list = _a.list, pool = _a.pool, frameRasterMap = _a.frameRasterMap;
+            var _a = this, list = _a.list, pool = _a.pool;
             if (atlas.isSingle) {
                 delete this.singles[atlas.uniqId];
                 atlas.storage.dispose();
@@ -943,6 +923,7 @@ var pixi_blit;
             this.type = pixi_blit.CacheType.Auto;
             this.graphicsNode = null;
             this.texture = new PIXI.Texture(PIXI.Texture.WHITE.baseTexture);
+            this.addingToCollection = null;
             this.atlas = null;
             this.atlasNode = null;
             this.baseTexDirtyId = 0;
@@ -1021,8 +1002,9 @@ var pixi_blit;
                 prerender: new PIXI.Runner('prerender'),
                 tryRepack: new PIXI.Runner('tryRepack'),
             };
-            this.atlases = [null, null, null, null, null];
+            this.fillActiveElements = false;
             this.activeElements = [];
+            this.atlases = [null, null, null, null, null];
             this.frameNum = 0;
             this.lastGcFrameNum = 0;
             this.gcNum = 0;
@@ -1092,6 +1074,7 @@ var pixi_blit;
         ShapeCache.prototype.frameTick = function () {
             var _a = this, activeElements = _a.activeElements, runners = _a.runners;
             this.frameNum++;
+            this.fillActiveElements = true;
             activeElements.length = 0;
             this.recFind(this.root, this.visitFrame);
             runners.processQueue.emit();
@@ -1103,6 +1086,7 @@ var pixi_blit;
             for (var i = 0; i < activeElements.length; i++) {
                 activeElements[i].prerender();
             }
+            this.fillActiveElements = false;
         };
         ShapeCache.prototype.isEmpty = function (graphics) {
             graphics.finishPoly();
@@ -1344,15 +1328,20 @@ var pixi_blit;
         function VectorSprite(model) {
             var _this = _super.call(this) || this;
             _this.model = model;
+            _this.tint = 0xFFFFFF;
             _this.preferredCache = pixi_blit.CacheType.Auto;
             _this.activeCacheType = pixi_blit.CacheType.No_Cache;
             _this.activeRaster = null;
             _this.activeGraphics = null;
             _this.activeSprite = null;
+            _this.rasterDirty = true;
             _this.spriteGenerator = null;
             return _this;
         }
         VectorSprite.prototype.enableRaster = function (raster) {
+            if (this.activeRaster !== raster) {
+                this.rasterDirty = true;
+            }
             this.activeRaster = raster;
             this.activeCacheType = raster.type;
         };
@@ -1375,33 +1364,59 @@ var pixi_blit;
             _super.prototype.updateTransform.call(this);
             if (this.activeSprite) {
                 this.activeSprite.transform.updateTransform(this.transform);
+                this.activeSprite.tint = this.tint;
                 this.activeSprite.worldAlpha = this.worldAlpha;
             }
             if (this.activeGraphics) {
                 this.activeGraphics.transform.updateTransform(this.transform);
+                this.activeGraphics.tint = this.tint;
                 this.activeGraphics.worldAlpha = this.worldAlpha;
             }
         };
         VectorSprite.prototype.prerender = function () {
-            var _a = this, activeRaster = _a.activeRaster, activeGraphics = _a.activeGraphics;
+            var activeRaster = this.activeRaster;
             if (activeRaster) {
                 if (activeRaster.mem.cacheStatus > pixi_blit.CacheStatus.Drawn) {
                     throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
                 }
-                if (!this.activeSprite) {
-                    if (this.spriteGenerator) {
-                        this.activeSprite = this.spriteGenerator.generateSprite();
+                if (this.rasterDirty) {
+                    if (!this.activeSprite) {
+                        if (this.spriteGenerator) {
+                            this.activeSprite = this.spriteGenerator.generateSprite();
+                        }
+                        else {
+                            this.activeSprite = new PIXI.Sprite();
+                        }
                     }
-                    else {
-                        this.activeSprite = new PIXI.Sprite();
-                    }
+                    this.rasterDirty = false;
+                    this.activeSprite.texture = activeRaster.texture;
+                    tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
+                    tempMat.tx = -activeRaster.outerBounds.x;
+                    tempMat.ty = -activeRaster.outerBounds.y;
+                    tempMat.invert();
+                    this.activeSprite.transform.setFromMatrix(tempMat);
                 }
-                this.activeSprite.texture = activeRaster.texture;
-                tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
-                tempMat.tx = -activeRaster.outerBounds.x;
-                tempMat.ty = -activeRaster.outerBounds.y;
-                tempMat.invert();
-                this.activeSprite.transform.setFromMatrix(tempMat);
+            }
+        };
+        VectorSprite.prototype.containsPoint = function (point) {
+            var _a = this, activeSprite = _a.activeSprite, activeGraphics = _a.activeGraphics;
+            if (activeSprite && activeSprite.containsPoint) {
+                return activeSprite.containsPoint(point);
+            }
+            else if (activeGraphics) {
+                return activeGraphics.containsPoint(point);
+            }
+            return false;
+        };
+        VectorSprite.prototype.calculateBounds = function () {
+            var _a = this, _bounds = _a._bounds, activeSprite = _a.activeSprite, activeGraphics = _a.activeGraphics;
+            if (activeSprite) {
+                activeSprite._bounds = this._bounds;
+                activeSprite.calculateBounds();
+            }
+            else if (activeGraphics) {
+                activeGraphics._bounds = this._bounds;
+                activeGraphics.calculateBounds();
             }
         };
         VectorSprite.prototype._render = function (renderer) {

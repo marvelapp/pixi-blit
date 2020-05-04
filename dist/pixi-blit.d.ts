@@ -31,7 +31,6 @@ declare namespace pixi_blit {
         doClear: boolean;
         rect: PIXI.Rectangle;
     }
-    import CLEAR_MODES = PIXI.CLEAR_MODES;
     class RenderBuffer {
         _storageMode: BLIT_STORAGE_MODE;
         constructor(renderer: PIXI.Renderer, options: IRenderBufferOptions);
@@ -40,7 +39,7 @@ declare namespace pixi_blit {
         parentRenderer: PIXI.Renderer;
         innerRenderer: PIXI.Renderer;
         innerTexture: PIXI.RenderTexture;
-        clearBeforeBlit: CLEAR_MODES;
+        clearBeforeBlit: any;
         get storageMode(): BLIT_STORAGE_MODE;
         get dimensions(): ITextureOptions;
         get width(): number;
@@ -77,18 +76,6 @@ declare namespace pixi_blit {
 }
 declare module "pixi-blit" {
     export = pixi_blit;
-}
-declare namespace PIXI {
-}
-declare namespace pixi_blit {
-}
-declare namespace PIXI {
-    interface DisplayObject {
-        aaMode: number;
-        blitComponent: pixi_blit.BlitComponent;
-    }
-}
-declare namespace pixi_blit {
 }
 declare namespace PIXI.systems {
     interface FilterSystem {
@@ -171,12 +158,6 @@ declare namespace pixi_blit {
         drop: Array<Atlas>;
         pool: Array<AbstractAtlasStorage>;
         frameRasterQueue: Array<RasterCache>;
-        frameRasterMap: {
-            [key: number]: RasterCache;
-        };
-        gcEntries: {
-            [key: number]: IGCEntry;
-        };
         addToQueue(raster: RasterCache): void;
         elemSortMethod: (a: RasterCache, b: RasterCache) => number;
         isBig: (elem: RasterCache) => boolean;
@@ -257,6 +238,7 @@ declare namespace pixi_blit {
         type: CacheType;
         graphicsNode: PIXI.Graphics | GeneratedCanvasGraphics;
         texture: PIXI.Texture;
+        addingToCollection: AtlasCollection;
         atlas: Atlas;
         atlasNode: AtlasNode<RasterCache>;
         baseTexDirtyId: number;
@@ -295,10 +277,11 @@ declare namespace pixi_blit {
             prerender: PIXI.Runner;
             tryRepack: PIXI.Runner;
         };
+        fillActiveElements: boolean;
+        activeElements: Array<VectorSprite>;
         atlases: {
             [key in CacheType]: AtlasCollection;
         };
-        activeElements: Array<VectorSprite>;
         frameNum: number;
         lastGcFrameNum: number;
         gcNum: number;
@@ -377,6 +360,8 @@ declare namespace pixi_blit {
 declare namespace pixi_blit {
     interface ISprite extends PIXI.Container {
         texture: PIXI.Texture;
+        tint?: number;
+        containsPoint?(point: PIXI.IPoint): boolean;
     }
     interface ISpriteGenerator {
         readonly scaleX: number;
@@ -386,17 +371,21 @@ declare namespace pixi_blit {
     class VectorSprite extends PIXI.Container {
         model: VectorModel;
         constructor(model: VectorModel);
+        tint: number;
         preferredCache: CacheType;
         activeCacheType: CacheType;
         activeRaster: RasterCache;
         activeGraphics: PIXI.Graphics;
         activeSprite: ISprite;
+        rasterDirty: boolean;
         spriteGenerator: ISpriteGenerator;
         enableRaster(raster: RasterCache): void;
         enableGraphics(geom: PIXI.GraphicsGeometry): void;
         disable(): void;
         updateTransform(): void;
         prerender(): void;
+        containsPoint(point: PIXI.IPoint): boolean;
+        calculateBounds(): void;
         _render(renderer: PIXI.Renderer): void;
     }
 }
