@@ -381,9 +381,11 @@ var pixi_blit;
             this.type = type;
             this.options = options;
             this.atlas = null;
+            this.needClear = false;
         }
         AbstractAtlasStorage.prototype.bind = function (atlas) {
             this.atlas = atlas;
+            this.needClear = true;
         };
         AbstractAtlasStorage.prototype.unbind = function () {
             this.atlas = null;
@@ -657,9 +659,9 @@ var pixi_blit;
             }
             list.splice(ind, 1);
             atlas.mem.cacheStatus = pixi_blit.CacheStatus.Hanging;
-            this.drop.push(atlas);
             atlas.storage.unbind();
-            pool.push(atlas.storage);
+            this.drop.push(atlas.storage);
+            atlas.destroy();
         };
         AtlasCollection.prototype.tryRepack = function () {
             var list = this.list;
@@ -693,7 +695,6 @@ var pixi_blit;
                     }
                 }
             }
-            lightQueue.sort(this.elemSortMethod);
             for (var j = 0; j + 1 < N; j++) {
                 newAtlases.push(this.takeFromPool());
             }
@@ -712,7 +713,10 @@ var pixi_blit;
                 }
             }
             if (failFlag) {
-                list.length = list.length - newAtlases.length;
+                for (var j = 0; j + 1 < N; j++) {
+                    var atlas = list.pop();
+                    this.pool.push(atlas.storage);
+                }
             }
             else {
                 for (var j = N - 1; j >= 0; j--) {
@@ -727,9 +731,9 @@ var pixi_blit;
             this.cleanup();
         };
         AtlasCollection.prototype.cleanup = function () {
-            var drop = this.drop;
+            var _a = this, drop = _a.drop, pool = _a.pool;
             for (var i = 0; i < drop.length; i++) {
-                drop[i].destroy();
+                pool.push(drop[i]);
             }
             drop.length = 0;
         };
@@ -948,6 +952,7 @@ var pixi_blit;
             }
             this.graphicsNode.transform.setFromMatrix(this.createdMat);
             this.outerBounds = this.graphicsNode.getBounds();
+            this.outerBounds.ceil();
         };
         Object.defineProperty(RasterCache.prototype, "area", {
             get: function () {
@@ -1053,6 +1058,7 @@ var pixi_blit;
                 size: 1024,
                 textureCount: 30,
                 canvasAntiConflation: false,
+                atlasAllowInsert: true,
             }, this.options);
             var blitterOptions = Object.assign({
                 size: 1024,
@@ -1578,6 +1584,7 @@ var pixi_blit;
                     _this.addedToHtml = true;
                     CanvasAtlasStorage.CanvasHTMLContainer.appendChild(_this.canvas);
                 }
+                _this.needClear = false;
                 var _a = _this, atlas = _a.atlas, renderOnlyModified = _a.renderOnlyModified, baseTex = _a.baseTex;
                 var addedElements = atlas.addedElements;
                 baseTex.update();
@@ -1626,6 +1633,12 @@ var pixi_blit;
             enumerable: true,
             configurable: true
         });
+        CanvasAtlasStorage.prototype.hackClear = function () {
+            var crt = this.canvasRt.baseTexture._canvasRenderTarget;
+            if (crt) {
+                crt.context.clearRect(0, 0, crt.canvas.width, crt.canvas.height);
+            }
+        };
         CanvasAtlasStorage.prototype.dispose = function () {
             if (this.addedToHtml) {
                 CanvasAtlasStorage.CanvasHTMLContainer.removeChild(this.canvas);
@@ -1657,6 +1670,9 @@ var pixi_blit;
             }
             atlas.markClean();
             var storage = atlas.storage;
+            if (storage.needClear) {
+                storage.hackClear();
+            }
             canvasRenderer.render(storage.rootContainer, storage.canvasRt, false);
             renderer.texture.bind(storage.baseTex, 0);
         };

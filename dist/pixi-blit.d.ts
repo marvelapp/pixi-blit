@@ -105,6 +105,7 @@ declare namespace pixi_blit {
         constructor(type: CacheType, options: PIXI.ISize);
         readonly baseTexture: PIXI.BaseTexture;
         atlas: Atlas;
+        needClear: boolean;
         bind(atlas: Atlas): void;
         unbind(): void;
         abstract dispose(): void;
@@ -155,7 +156,7 @@ declare namespace pixi_blit {
             [key: number]: Atlas;
         };
         newSingles: Array<Atlas>;
-        drop: Array<Atlas>;
+        drop: Array<AbstractAtlasStorage>;
         pool: Array<AbstractAtlasStorage>;
         frameRasterQueue: Array<RasterCache>;
         addToQueue(raster: RasterCache): void;
@@ -423,6 +424,7 @@ declare namespace pixi_blit {
         get baseTexture(): PIXI.BaseTexture;
         get canvas(): HTMLCanvasElement;
         get context(): CanvasRenderingContext2D;
+        hackClear(): void;
         renderOnlyModified: boolean;
         addedToHtml: boolean;
         renderCanvas: (renderer: PIXI.CanvasRenderer) => void;
