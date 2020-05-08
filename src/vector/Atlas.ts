@@ -160,6 +160,7 @@ namespace pixi_blit {
             elem.atlasNode = elem.newAtlasNode;
             elem.newAtlas = null;
             elem.newAtlasNode = null;
+            elem.updateId++;
 
             const {graphicsNode, atlasNode, outerBounds} = elem;
 

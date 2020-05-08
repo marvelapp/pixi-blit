@@ -28,13 +28,13 @@ namespace pixi_blit {
         activeRaster: RasterCache = null;
         activeGraphics: PIXI.Graphics = null;
         activeSprite: ISprite = null;
-        rasterDirty = true;
+        rasterUpdateId: number = -1;
 
         spriteGenerator: ISpriteGenerator = null;
 
         enableRaster(raster: RasterCache) {
             if (this.activeRaster !== raster) {
-                this.rasterDirty = true;
+                this.rasterUpdateId = -1;
             }
             this.activeRaster = raster;
             this.activeCacheType = raster.type;
@@ -80,7 +80,7 @@ namespace pixi_blit {
                     throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
                 }
 
-                if (this.rasterDirty) {
+                if (this.rasterUpdateId !== this.activeRaster.updateId) {
                     if (!this.activeSprite) {
                         if (this.spriteGenerator) {
                             this.activeSprite = this.spriteGenerator.generateSprite();
@@ -88,7 +88,7 @@ namespace pixi_blit {
                             this.activeSprite = new PIXI.Sprite();
                         }
                     }
-                    this.rasterDirty = false;
+                    this.rasterUpdateId = this.activeRaster.updateId;
 
                     this.activeSprite.texture = activeRaster.texture;
                     tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);

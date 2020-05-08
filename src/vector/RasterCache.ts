@@ -29,6 +29,7 @@ namespace pixi_blit {
         atlasNode: AtlasNode<RasterCache> = null;
         baseTexDirtyId: number = 0;
         atlasCanvasAntiConflation = false;
+        updateId: number = 0;
 
         createdMat: PIXI.Matrix;
         newAtlas: Atlas = null;
