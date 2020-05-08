@@ -26,6 +26,7 @@ namespace pixi_blit {
                 size: 1024,
                 textureCount: 30,
                 canvasAntiConflation: false,
+                atlasAllowInsert: true,
             }, this.options);
 
             const blitterOptions: IMultiAtlasOptions = (Object as any).assign({

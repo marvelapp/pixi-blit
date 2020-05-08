@@ -30,6 +30,13 @@ namespace pixi_blit {
             return (this.canvasRt as any).baseTexture._canvasRenderTarget.context;
         }
 
+        hackClear() {
+            const crt = (this.canvasRt as any).baseTexture._canvasRenderTarget;
+            if (crt) {
+                crt.context.clearRect(0, 0, crt.canvas.width, crt.canvas.height)
+            }
+        }
+
         renderOnlyModified = true;
         addedToHtml = false;
         /**
@@ -41,6 +48,7 @@ namespace pixi_blit {
                 this.addedToHtml = true;
                 CanvasAtlasStorage.CanvasHTMLContainer.appendChild(this.canvas);
             }
+            this.needClear = false;
 
             const {atlas, renderOnlyModified, baseTex} = this;
             const {addedElements} = atlas;
@@ -103,6 +111,10 @@ namespace pixi_blit {
             atlas.markClean();
 
             const storage = atlas.storage as CanvasAtlasStorage;
+            //PixiJS clear param for canvas doesnt work :(
+            if (storage.needClear) {
+                storage.hackClear();
+            }
             canvasRenderer.render(storage.rootContainer, storage.canvasRt, false);
             renderer.texture.bind(storage.baseTex, 0);
         }

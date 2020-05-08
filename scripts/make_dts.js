@@ -25,7 +25,7 @@ tmp.file(function (err, filename) {
     var dtsContent = '' + fs.readFileSync(dtsPath);
 
     fs.writeFileSync(
-      path.resolve('dist/pixi-pixi_blit.d.ts'),
+      path.resolve('dist/pixi-blit.d.ts'),
       dtsContent.replace(/namespace pixi_blit/g, 'namespace PIXI.blit')
 		  .replace(/pixi_blit/g, 'PIXI.blit')
     );
