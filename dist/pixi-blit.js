@@ -504,6 +504,7 @@ var pixi_blit;
             elem.atlasNode = elem.newAtlasNode;
             elem.newAtlas = null;
             elem.newAtlasNode = null;
+            elem.updateId++;
             var graphicsNode = elem.graphicsNode, atlasNode = elem.atlasNode, outerBounds = elem.outerBounds;
             graphicsNode.transform.position.set(-outerBounds.x + pad + atlasNode.rect.left, -outerBounds.y + pad + atlasNode.rect.top);
             graphicsNode._recursivePostUpdateTransform();
@@ -932,6 +933,7 @@ var pixi_blit;
             this.atlasNode = null;
             this.baseTexDirtyId = 0;
             this.atlasCanvasAntiConflation = false;
+            this.updateId = 0;
             this.newAtlas = null;
             this.newAtlasNode = null;
             this.oldAtlasSprite = null;
@@ -1340,13 +1342,13 @@ var pixi_blit;
             _this.activeRaster = null;
             _this.activeGraphics = null;
             _this.activeSprite = null;
-            _this.rasterDirty = true;
+            _this.rasterUpdateId = -1;
             _this.spriteGenerator = null;
             return _this;
         }
         VectorSprite.prototype.enableRaster = function (raster) {
             if (this.activeRaster !== raster) {
-                this.rasterDirty = true;
+                this.rasterUpdateId = -1;
             }
             this.activeRaster = raster;
             this.activeCacheType = raster.type;
@@ -1385,7 +1387,7 @@ var pixi_blit;
                 if (activeRaster.mem.cacheStatus > pixi_blit.CacheStatus.Drawn) {
                     throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
                 }
-                if (this.rasterDirty) {
+                if (this.rasterUpdateId !== this.activeRaster.updateId) {
                     if (!this.activeSprite) {
                         if (this.spriteGenerator) {
                             this.activeSprite = this.spriteGenerator.generateSprite();
@@ -1394,7 +1396,7 @@ var pixi_blit;
                             this.activeSprite = new PIXI.Sprite();
                         }
                     }
-                    this.rasterDirty = false;
+                    this.rasterUpdateId = this.activeRaster.updateId;
                     this.activeSprite.texture = activeRaster.texture;
                     tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
                     tempMat.tx = -activeRaster.outerBounds.x;

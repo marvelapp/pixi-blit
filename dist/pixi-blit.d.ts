@@ -244,6 +244,7 @@ declare namespace pixi_blit {
         atlasNode: AtlasNode<RasterCache>;
         baseTexDirtyId: number;
         atlasCanvasAntiConflation: boolean;
+        updateId: number;
         createdMat: PIXI.Matrix;
         newAtlas: Atlas;
         newAtlasNode: AtlasNode<RasterCache>;
@@ -378,7 +379,7 @@ declare namespace pixi_blit {
         activeRaster: RasterCache;
         activeGraphics: PIXI.Graphics;
         activeSprite: ISprite;
-        rasterDirty: boolean;
+        rasterUpdateId: number;
         spriteGenerator: ISpriteGenerator;
         enableRaster(raster: RasterCache): void;
         enableGraphics(geom: PIXI.GraphicsGeometry): void;
