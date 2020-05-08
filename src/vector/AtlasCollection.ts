@@ -29,7 +29,7 @@ namespace pixi_blit {
         list: Array<Atlas> = [];
         singles: { [key: number]: Atlas } = {};
         newSingles: Array<Atlas> = [];
-        drop: Array<Atlas> = [];
+        drop: Array<AbstractAtlasStorage> = [];
         pool: Array<AbstractAtlasStorage> = [];
 
         frameRasterQueue: Array<RasterCache> = [];
@@ -193,9 +193,9 @@ namespace pixi_blit {
             }
             list.splice(ind, 1);
             atlas.mem.cacheStatus = CacheStatus.Hanging;
-            this.drop.push(atlas);
             atlas.storage.unbind();
-            pool.push(atlas.storage);
+            this.drop.push(atlas.storage);
+            atlas.destroy();
         }
 
         tryRepack() {
@@ -236,7 +236,6 @@ namespace pixi_blit {
                 }
             }
 
-            lightQueue.sort(this.elemSortMethod);
             for (let j = 0; j + 1 < N; j++) {
                 newAtlases.push(this.takeFromPool());
             }
@@ -260,7 +259,10 @@ namespace pixi_blit {
             }
 
             if (failFlag) {
-                list.length = list.length - newAtlases.length;
+                for (let j = 0; j + 1 < N; j++) {
+                    const atlas = list.pop();
+                    this.pool.push(atlas.storage);
+                }
             } else {
                 for (let j = N - 1; j >= 0; j--) {
                     this.removeAtlas(list[j]);
@@ -277,9 +279,9 @@ namespace pixi_blit {
         }
 
         cleanup() {
-            const {drop} = this;
+            const {drop, pool} = this;
             for (let i = 0; i < drop.length; i++) {
-                drop[i].destroy();
+                pool.push(drop[i]);
             }
             drop.length = 0;
         }

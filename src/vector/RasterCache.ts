@@ -58,6 +58,7 @@ namespace pixi_blit {
             }
             this.graphicsNode.transform.setFromMatrix(this.createdMat);
             this.outerBounds = this.graphicsNode.getBounds();
+            this.outerBounds.ceil();
         }
 
         get area() {

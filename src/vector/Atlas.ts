@@ -16,9 +16,11 @@ namespace pixi_blit {
         readonly baseTexture: PIXI.BaseTexture;
 
         atlas: Atlas = null;
+        needClear = false;
 
         bind(atlas: Atlas) {
             this.atlas = atlas;
+            this.needClear = true;
         }
 
         unbind() {
