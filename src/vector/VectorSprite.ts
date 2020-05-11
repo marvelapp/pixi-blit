@@ -28,15 +28,18 @@ namespace pixi_blit {
         activeRaster: RasterCache = null;
         activeGraphics: PIXI.Graphics = null;
         activeSprite: ISprite = null;
-        rasterUpdateId: number = -1;
+        _rasterId: number = -1;
+        _transformId: number = -1;
+        snap: boolean = false;
 
         spriteGenerator: ISpriteGenerator = null;
 
         enableRaster(raster: RasterCache) {
-            if (this.activeRaster !== raster) {
-                this.rasterUpdateId = -1;
+            if (this.activeRaster == raster) {
+                return;
             }
             this.activeRaster = raster;
+            this._rasterId = -1;
             this.activeCacheType = raster.type;
         }
 
@@ -74,30 +77,48 @@ namespace pixi_blit {
         prerender() {
             const {activeRaster} = this;
 
+            if (!activeRaster) {
+                return;
+            }
             // position the raster or graphics
-            if (activeRaster) {
-                if (activeRaster.mem.cacheStatus > CacheStatus.Drawn) {
-                    throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
-                }
+            if (activeRaster.mem.cacheStatus > CacheStatus.Drawn) {
+                throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
+            }
+            if (this._rasterId === this.activeRaster.updateId &&
+                (!this.snap || this._transformId === (this.transform as any)._worldID)) {
+                return;
+            }
 
-                if (this.rasterUpdateId !== this.activeRaster.updateId) {
-                    if (!this.activeSprite) {
-                        if (this.spriteGenerator) {
-                            this.activeSprite = this.spriteGenerator.generateSprite();
-                        } else {
-                            this.activeSprite = new PIXI.Sprite();
-                        }
-                    }
-                    this.rasterUpdateId = this.activeRaster.updateId;
+            this._rasterId = this.activeRaster.updateId;
+            this._transformId = (this.transform as any)._worldID;
 
-                    this.activeSprite.texture = activeRaster.texture;
-                    tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
-                    tempMat.tx = -activeRaster.outerBounds.x;
-                    tempMat.ty = -activeRaster.outerBounds.y;
-                    tempMat.invert();
-                    this.activeSprite.transform.setFromMatrix(tempMat);
+            if (!this.activeSprite) {
+                if (this.spriteGenerator) {
+                    this.activeSprite = this.spriteGenerator.generateSprite();
+                } else {
+                    this.activeSprite = new PIXI.Sprite();
                 }
             }
+
+            this.activeSprite.texture = activeRaster.texture;
+            tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
+            tempMat.tx = -activeRaster.outerBounds.x;
+            tempMat.ty = -activeRaster.outerBounds.y;
+            tempMat.invert();
+            if (this.snap) {
+                const wt = this.transform.worldTransform;
+
+                let dx = tempMat.tx * wt.a + wt.tx;
+                let dy = tempMat.ty * wt.d + wt.ty;
+
+                dx -= Math.round(dx);
+                dy -= Math.round(dy);
+
+                tempMat.tx -= dx / wt.a;
+                tempMat.ty -= dy / wt.d;
+            }
+
+            this.activeSprite.transform.setFromMatrix(tempMat);
         }
 
         containsPoint(point: PIXI.IPoint) {
