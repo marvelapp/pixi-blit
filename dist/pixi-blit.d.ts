@@ -379,7 +379,9 @@ declare namespace pixi_blit {
         activeRaster: RasterCache;
         activeGraphics: PIXI.Graphics;
         activeSprite: ISprite;
-        rasterUpdateId: number;
+        _rasterId: number;
+        _transformId: number;
+        snap: boolean;
         spriteGenerator: ISpriteGenerator;
         enableRaster(raster: RasterCache): void;
         enableGraphics(geom: PIXI.GraphicsGeometry): void;

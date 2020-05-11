@@ -1342,15 +1342,18 @@ var pixi_blit;
             _this.activeRaster = null;
             _this.activeGraphics = null;
             _this.activeSprite = null;
-            _this.rasterUpdateId = -1;
+            _this._rasterId = -1;
+            _this._transformId = -1;
+            _this.snap = false;
             _this.spriteGenerator = null;
             return _this;
         }
         VectorSprite.prototype.enableRaster = function (raster) {
-            if (this.activeRaster !== raster) {
-                this.rasterUpdateId = -1;
+            if (this.activeRaster == raster) {
+                return;
             }
             this.activeRaster = raster;
+            this._rasterId = -1;
             this.activeCacheType = raster.type;
         };
         VectorSprite.prototype.enableGraphics = function (geom) {
@@ -1383,28 +1386,41 @@ var pixi_blit;
         };
         VectorSprite.prototype.prerender = function () {
             var activeRaster = this.activeRaster;
-            if (activeRaster) {
-                if (activeRaster.mem.cacheStatus > pixi_blit.CacheStatus.Drawn) {
-                    throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
+            if (!activeRaster) {
+                return;
+            }
+            if (activeRaster.mem.cacheStatus > pixi_blit.CacheStatus.Drawn) {
+                throw Error("CacheStatus for active raster in vectorSprite is not Drawn!");
+            }
+            if (this._rasterId === this.activeRaster.updateId &&
+                (!this.snap || this._transformId === this.transform._worldID)) {
+                return;
+            }
+            this._rasterId = this.activeRaster.updateId;
+            this._transformId = this.transform._worldID;
+            if (!this.activeSprite) {
+                if (this.spriteGenerator) {
+                    this.activeSprite = this.spriteGenerator.generateSprite();
                 }
-                if (this.rasterUpdateId !== this.activeRaster.updateId) {
-                    if (!this.activeSprite) {
-                        if (this.spriteGenerator) {
-                            this.activeSprite = this.spriteGenerator.generateSprite();
-                        }
-                        else {
-                            this.activeSprite = new PIXI.Sprite();
-                        }
-                    }
-                    this.rasterUpdateId = this.activeRaster.updateId;
-                    this.activeSprite.texture = activeRaster.texture;
-                    tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
-                    tempMat.tx = -activeRaster.outerBounds.x;
-                    tempMat.ty = -activeRaster.outerBounds.y;
-                    tempMat.invert();
-                    this.activeSprite.transform.setFromMatrix(tempMat);
+                else {
+                    this.activeSprite = new PIXI.Sprite();
                 }
             }
+            this.activeSprite.texture = activeRaster.texture;
+            tempMat.copyFrom(activeRaster.graphicsNode.transform.localTransform);
+            tempMat.tx = -activeRaster.outerBounds.x;
+            tempMat.ty = -activeRaster.outerBounds.y;
+            tempMat.invert();
+            if (this.snap) {
+                var wt = this.transform.worldTransform;
+                var dx = tempMat.tx * wt.a + wt.tx;
+                var dy = tempMat.ty * wt.d + wt.ty;
+                dx -= Math.round(dx);
+                dy -= Math.round(dy);
+                tempMat.tx -= dx / wt.a;
+                tempMat.ty -= dy / wt.d;
+            }
+            this.activeSprite.transform.setFromMatrix(tempMat);
         };
         VectorSprite.prototype.containsPoint = function (point) {
             var _a = this, activeSprite = _a.activeSprite, activeGraphics = _a.activeGraphics;
